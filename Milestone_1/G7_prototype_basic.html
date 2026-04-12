@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulse — Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: #f4f5f7; color: #111827; min-height: 100vh; font-size: 13px; }
+
+.topbar {
+  background: #fff; border-bottom: 1px solid #e5e7eb;
+  padding: 0 32px; height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+.brand { font-size: 20px; font-weight: 600; color: #00a86b; letter-spacing: -0.3px; }
+.brand-sep { color: #e5e7eb; }
+.brand-sub { font-size: 12px; font-weight: 400; color: #9ca3af; margin-left: 6px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #9ca3af; }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: #00a86b; animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.page { max-width: 1160px; margin: 0 auto; padding: 24px 24px 48px; }
+
+.sec-lbl {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1px; color: #9ca3af; margin-bottom: 12px;
+}
+
+/* KPI ROW */
+.kpi-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 28px; }
+.kpi-block {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 14px 18px; display: flex; align-items: center; gap: 14px;
+}
+.kpi-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kpi-lbl { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: .6px; font-weight: 500; }
+.kpi-val { font-size: 20px; font-weight: 600; color: #111827; line-height: 1.2; }
+.kpi-trend { font-size: 10.5px; color: #00a86b; }
+
+/* 4-COLUMN SEGMENT GRID */
+.seg-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
+
+.seg-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 11px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* top color bar */
+.seg-bar { height: 3px; }
+.seg-bar.power   { background: #00a86b; }
+.seg-bar.growing { background: #3b82f6; }
+.seg-bar.casual  { background: #f59e0b; }
+.seg-bar.dormant { background: #d1d5db; }
+
+.seg-head { padding: 14px 16px 10px; }
+
+.seg-tag {
+  display: inline-block; font-size: 9.5px; font-weight: 600;
+  padding: 2px 9px; border-radius: 20px; margin-bottom: 8px;
+}
+.seg-tag.power   { background: #ecfdf5; color: #065f46; }
+.seg-tag.growing { background: #eff6ff; color: #1d4ed8; }
+.seg-tag.casual  { background: #fffbeb; color: #92400e; }
+.seg-tag.dormant { background: #f9fafb; color: #6b7280; }
+
+.seg-count { font-size: 28px; font-weight: 600; line-height: 1; }
+.seg-count.power   { color: #00a86b; }
+.seg-count.growing { color: #3b82f6; }
+.seg-count.casual  { color: #d97706; }
+.seg-count.dormant { color: #9ca3af; }
+.seg-sub { font-size: 10px; color: #9ca3af; margin-top: 3px; }
+
+/* FUNNEL */
+.seg-funnel {
+  padding: 10px 16px 12px;
+  border-top: 1px solid #f3f4f6;
+  background: #fafafa;
+}
+.funnel-lbl {
+  font-size: 9px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .7px; color: #9ca3af; margin-bottom: 8px;
+}
+.f-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+.f-row:last-child { margin-bottom: 0; }
+.f-name { font-size: 10px; color: #6b7280; width: 62px; flex-shrink: 0; }
+.f-track { flex: 1; background: #e5e7eb; border-radius: 3px; height: 10px; overflow: hidden; }
+.f-fill  { height: 100%; border-radius: 3px; }
+.f-pct   { font-size: 10px; font-weight: 500; color: #374151; width: 34px; text-align: right; flex-shrink: 0; }
+
+/* EDITOR */
+.seg-editor { padding: 12px 16px; border-top: 1px solid #f3f4f6; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.f-lbl { font-size: 9.5px; font-weight: 500; text-transform: uppercase; letter-spacing: .6px; color: #9ca3af; margin-bottom: 4px; }
+textarea.fi {
+  width: 100%; background: #f9fafb; border: 1px solid #e5e7eb;
+  border-radius: 7px; padding: 7px 9px; font-size: 11px; color: #374151;
+  font-family: 'DM Sans', sans-serif; resize: vertical; min-height: 56px; line-height: 1.5;
+}
+textarea.fi:focus { outline: none; border-color: #00a86b; background: #fff; }
+select.fi {
+  width: 100%; background: #f9fafb; border: 1px solid #e5e7eb;
+  border-radius: 7px; padding: 6px 9px; font-size: 11px; color: #374151;
+  font-family: 'DM Sans', sans-serif;
+}
+select.fi:focus { outline: none; border-color: #00a86b; }
+.prev-box {
+  background: #f0fdf8; border: 1px solid #a7f3d0;
+  border-radius: 6px; padding: 7px 9px;
+  font-size: 10.5px; color: #065f46; line-height: 1.55; margin-top: 5px;
+}
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+/* FOOTER */
+.seg-footer { padding: 12px 16px; border-top: 1px solid #f3f4f6; }
+.launch-btn {
+  width: 100%; border: none; border-radius: 8px;
+  padding: 9px 0; font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  color: #fff; transition: opacity .15s;
+}
+.launch-btn.power   { background: #00a86b; }
+.launch-btn.growing { background: #3b82f6; }
+.launch-btn.casual  { background: #f59e0b; }
+.launch-btn.dormant { background: #6b7280; }
+.launch-btn:hover   { opacity: .85; }
+.launch-btn:disabled { opacity: .55; cursor: default; }
+
+.status-row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.ab-badge { font-size: 10px; font-weight: 500; padding: 2px 9px; border-radius: 20px; }
+.ab-badge.pending { background: #fffbeb; color: #92400e; }
+.ab-badge.running { background: #eff6ff; color: #1d4ed8; }
+.ab-badge.paused  { background: #f3f4f6; color: #6b7280; }
+.sm-btns { display: flex; gap: 5px; }
+.sm-btn {
+  font-size: 10px; font-weight: 500; padding: 3px 9px;
+  border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb;
+  background: #fff; color: #6b7280;
+  font-family: 'DM Sans', sans-serif; transition: background .13s;
+}
+.sm-btn:hover { background: #f3f4f6; }
+
+/* TOAST */
+.toast {
+  display: none; position: fixed; bottom: 22px; right: 26px;
+  background: #1f2937; border-radius: 9px; padding: 9px 16px;
+  font-size: 12px; color: #f9fafb; z-index: 999;
+}
+.toast.show { display: block; }
+.tg { color: #00a86b; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">pulse<span class="brand-sep">.</span><span class="brand-sub">overview</span></div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    4,420 free users &nbsp;·&nbsp; pipeline active
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- METRICS -->
+  <div class="sec-lbl">Overall metrics</div>
+  <div class="kpi-row">
+    <div class="kpi-block">
+      <div class="kpi-icon" style="background:#ecfdf5">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M2 12L6 7l3 3 5-6" stroke="#00a86b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div class="kpi-lbl">Conversion rate</div>
+        <div class="kpi-val">5.4%</div>
+        <div class="kpi-trend">+2.1% vs baseline</div>
+      </div>
+    </div>
+    <div class="kpi-block">
+      <div class="kpi-icon" style="background:#eff6ff">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#3b82f6" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="kpi-lbl">Avg time to convert</div>
+        <div class="kpi-val">6.2 days</div>
+        <div class="kpi-trend">−3.8d vs control</div>
+      </div>
+    </div>
+    <div class="kpi-block">
+      <div class="kpi-icon" style="background:#fef3c7">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 3.5 3.5.5-2.5 2.5.5 3.5L8 10.5 5 12l.5-3.5L3 6l3.5-.5L8 2z" stroke="#d97706" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div class="kpi-lbl">30-day retention</div>
+        <div class="kpi-val">83%</div>
+        <div class="kpi-trend">Target: 80% ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEGMENTS -->
+  <div class="sec-lbl">Segments — funnel · message · A/B test</div>
+  <div class="seg-grid">
+
+    <!-- ── POWER ── -->
+    <div class="seg-card">
+      <div class="seg-bar power"></div>
+      <div class="seg-head">
+        <div class="seg-tag power">Power writers</div>
+        <div class="seg-count power">1,240</div>
+        <div class="seg-sub">12.4 sessions/wk · 7.4 paywall hits</div>
+      </div>
+
+      <div class="seg-funnel">
+        <div class="funnel-lbl">Conversion funnel</div>
+        <div class="f-row"><span class="f-name">Free users</span><div class="f-track"><div class="f-fill" style="width:100%;background:#d1fae5"></div></div><span class="f-pct">1,240</span></div>
+        <div class="f-row"><span class="f-name">Nudge shown</span><div class="f-track"><div class="f-fill" style="width:88%;background:#6ee7b7"></div></div><span class="f-pct">88%</span></div>
+        <div class="f-row"><span class="f-name">Clicked CTA</span><div class="f-track"><div class="f-fill" style="width:22%;background:#34d399"></div></div><span class="f-pct">22%</span></div>
+        <div class="f-row"><span class="f-name">Upgraded</span><div class="f-track"><div class="f-fill" style="width:8.7%;background:#00a86b"></div></div><span class="f-pct">8.7%</span></div>
+      </div>
+
+      <div class="seg-editor">
+        <div>
+          <div class="f-lbl">Message</div>
+          <textarea class="fi" id="msg-power" oninput="prev('power')">You've exported 9 times and hit limits 7 times — go unlimited for AMD 2,900/month.</textarea>
+          <div class="prev-box" id="prev-power">You've exported 9 times and hit limits 7 times — go unlimited for AMD 2,900/month.</div>
+        </div>
+        <div class="two-col">
+          <div><div class="f-lbl">Channel</div><select class="fi"><option>In-app popup</option><option>Push</option><option>Email</option></select></div>
+          <div><div class="f-lbl">Trigger</div><select class="fi"><option>On paywall hit</option><option>On app open</option></select></div>
+        </div>
+      </div>
+
+      <div class="seg-footer">
+        <button class="launch-btn power" id="lb-power" onclick="launch('power')">Launch A/B test</button>
+        <div class="status-row">
+          <span class="ab-badge pending" id="st-power">Pending</span>
+          <div class="sm-btns">
+            <button class="sm-btn" onclick="pauseSeg('power')">Pause</button>
+            <button class="sm-btn" onclick="resetSeg('power')">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GROWING ── -->
+    <div class="seg-card">
+      <div class="seg-bar growing"></div>
+      <div class="seg-head">
+        <div class="seg-tag growing">Growing writers</div>
+        <div class="seg-count growing">1,580</div>
+        <div class="seg-sub">6.1 sessions/wk · 3.1 paywall hits</div>
+      </div>
+
+      <div class="seg-funnel">
+        <div class="funnel-lbl">Conversion funnel</div>
+        <div class="f-row"><span class="f-name">Free users</span><div class="f-track"><div class="f-fill" style="width:100%;background:#dbeafe"></div></div><span class="f-pct">1,580</span></div>
+        <div class="f-row"><span class="f-name">Nudge shown</span><div class="f-track"><div class="f-fill" style="width:80%;background:#93c5fd"></div></div><span class="f-pct">80%</span></div>
+        <div class="f-row"><span class="f-name">Clicked CTA</span><div class="f-track"><div class="f-fill" style="width:16%;background:#60a5fa"></div></div><span class="f-pct">16%</span></div>
+        <div class="f-row"><span class="f-name">Upgraded</span><div class="f-track"><div class="f-fill" style="width:5.1%;background:#3b82f6"></div></div><span class="f-pct">5.1%</span></div>
+      </div>
+
+      <div class="seg-editor">
+        <div>
+          <div class="f-lbl">Message</div>
+          <textarea class="fi" id="msg-growing" oninput="prev('growing')">You're growing fast! Unlock HD exports, custom fonts and more — AMD 2,900/month.</textarea>
+          <div class="prev-box" id="prev-growing">You're growing fast! Unlock HD exports, custom fonts and more — AMD 2,900/month.</div>
+        </div>
+        <div class="two-col">
+          <div><div class="f-lbl">Channel</div><select class="fi"><option>Email</option><option>In-app popup</option><option>Push</option></select></div>
+          <div><div class="f-lbl">Trigger</div><select class="fi"><option>On app open</option><option>On paywall hit</option></select></div>
+        </div>
+      </div>
+
+      <div class="seg-footer">
+        <button class="launch-btn growing" id="lb-growing" onclick="launch('growing')">Launch A/B test</button>
+        <div class="status-row">
+          <span class="ab-badge pending" id="st-growing">Pending</span>
+          <div class="sm-btns">
+            <button class="sm-btn" onclick="pauseSeg('growing')">Pause</button>
+            <button class="sm-btn" onclick="resetSeg('growing')">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CASUAL ── -->
+    <div class="seg-card">
+      <div class="seg-bar casual"></div>
+      <div class="seg-head">
+        <div class="seg-tag casual">Casual writers</div>
+        <div class="seg-count casual">980</div>
+        <div class="seg-sub">2.3 sessions/wk · 0.9 paywall hits</div>
+      </div>
+
+      <div class="seg-funnel">
+        <div class="funnel-lbl">Conversion funnel</div>
+        <div class="f-row"><span class="f-name">Free users</span><div class="f-track"><div class="f-fill" style="width:100%;background:#fef3c7"></div></div><span class="f-pct">980</span></div>
+        <div class="f-row"><span class="f-name">Nudge shown</span><div class="f-track"><div class="f-fill" style="width:65%;background:#fcd34d"></div></div><span class="f-pct">65%</span></div>
+        <div class="f-row"><span class="f-name">Clicked CTA</span><div class="f-track"><div class="f-fill" style="width:10%;background:#fbbf24"></div></div><span class="f-pct">10%</span></div>
+        <div class="f-row"><span class="f-name">Upgraded</span><div class="f-track"><div class="f-fill" style="width:1.9%;background:#f59e0b"></div></div><span class="f-pct">1.9%</span></div>
+      </div>
+
+      <div class="seg-editor">
+        <div>
+          <div class="f-lbl">Message</div>
+          <textarea class="fi" id="msg-casual" oninput="prev('casual')">Did you know Pro users get 120 exclusive Armenian templates? Try Pro free for 7 days.</textarea>
+          <div class="prev-box" id="prev-casual">Did you know Pro users get 120 exclusive Armenian templates? Try Pro free for 7 days.</div>
+        </div>
+        <div class="two-col">
+          <div><div class="f-lbl">Channel</div><select class="fi"><option>Push</option><option>In-app popup</option><option>Email</option></select></div>
+          <div><div class="f-lbl">Trigger</div><select class="fi"><option>After 3rd export</option><option>On app open</option></select></div>
+        </div>
+      </div>
+
+      <div class="seg-footer">
+        <button class="launch-btn casual" id="lb-casual" onclick="launch('casual')">Launch A/B test</button>
+        <div class="status-row">
+          <span class="ab-badge pending" id="st-casual">Pending</span>
+          <div class="sm-btns">
+            <button class="sm-btn" onclick="pauseSeg('casual')">Pause</button>
+            <button class="sm-btn" onclick="resetSeg('casual')">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DORMANT ── -->
+    <div class="seg-card">
+      <div class="seg-bar dormant"></div>
+      <div class="seg-head">
+        <div class="seg-tag dormant">Dormant writers</div>
+        <div class="seg-count dormant">620</div>
+        <div class="seg-sub">Last active ~38 days ago</div>
+      </div>
+
+      <div class="seg-funnel">
+        <div class="funnel-lbl">Conversion funnel</div>
+        <div class="f-row"><span class="f-name">Free users</span><div class="f-track"><div class="f-fill" style="width:100%;background:#f3f4f6"></div></div><span class="f-pct">620</span></div>
+        <div class="f-row"><span class="f-name">Nudge shown</span><div class="f-track"><div class="f-fill" style="width:48%;background:#d1d5db"></div></div><span class="f-pct">48%</span></div>
+        <div class="f-row"><span class="f-name">Clicked CTA</span><div class="f-track"><div class="f-fill" style="width:8%;background:#9ca3af"></div></div><span class="f-pct">8%</span></div>
+        <div class="f-row"><span class="f-name">Upgraded</span><div class="f-track"><div class="f-fill" style="width:0.7%;background:#6b7280"></div></div><span class="f-pct">0.7%</span></div>
+      </div>
+
+      <div class="seg-editor">
+        <div>
+          <div class="f-lbl">Message</div>
+          <textarea class="fi" id="msg-dormant" oninput="prev('dormant')">We miss you! Come back and get 20% off your first Pro month. Offer expires in 48h.</textarea>
+          <div class="prev-box" id="prev-dormant">We miss you! Come back and get 20% off your first Pro month. Offer expires in 48h.</div>
+        </div>
+        <div class="two-col">
+          <div><div class="f-lbl">Channel</div><select class="fi"><option>Email</option><option>In-app popup</option><option>Push</option></select></div>
+          <div><div class="f-lbl">Trigger</div><select class="fi"><option>On app open</option><option>On paywall hit</option></select></div>
+        </div>
+      </div>
+
+      <div class="seg-footer">
+        <button class="launch-btn dormant" id="lb-dormant" onclick="launch('dormant')">Launch A/B test</button>
+        <div class="status-row">
+          <span class="ab-badge pending" id="st-dormant">Pending</span>
+          <div class="sm-btns">
+            <button class="sm-btn" onclick="pauseSeg('dormant')">Pause</button>
+            <button class="sm-btn" onclick="resetSeg('dormant')">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function prev(seg) {
+  document.getElementById('prev-' + seg).textContent = document.getElementById('msg-' + seg).value;
+}
+
+function launch(seg) {
+  const btn = document.getElementById('lb-' + seg);
+  const badge = document.getElementById('st-' + seg);
+  btn.textContent = 'Running \u2713';
+  btn.disabled = true;
+  badge.textContent = 'Running';
+  badge.className = 'ab-badge running';
+  toast('A/B test launched for ' + seg + ' writers \u2014 14-day window started');
+}
+
+function pauseSeg(seg) {
+  const badge = document.getElementById('st-' + seg);
+  const btn = document.getElementById('lb-' + seg);
+  if (badge.textContent === 'Running') {
+    badge.textContent = 'Paused';
+    badge.className = 'ab-badge paused';
+    btn.textContent = 'Resume A/B test';
+    btn.disabled = false;
+    btn.onclick = () => launch(seg);
+    toast('Test paused for ' + seg + ' segment');
+  }
+}
+
+function resetSeg(seg) {
+  const badge = document.getElementById('st-' + seg);
+  const btn = document.getElementById('lb-' + seg);
+  badge.textContent = 'Pending';
+  badge.className = 'ab-badge pending';
+  btn.textContent = 'Launch A/B test';
+  btn.disabled = false;
+  btn.onclick = () => launch(seg);
+  toast('Test reset for ' + seg + ' segment');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = '<span class="tg">pulse</span> &nbsp;' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>

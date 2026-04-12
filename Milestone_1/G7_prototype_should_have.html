@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface2: #e8eaed;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.13);
+  --accent: #00b87a;
+  --accent2: #3b82f6;
+  --accent3: #f59e0b;
+  --text: #111827;
+  --muted: #9ca3af;
+  --muted2: #6b7280;
+  --red: #ef4444;
+  --power: #00b87a;
+  --growing: #3b82f6;
+  --casual: #f59e0b;
+  --dormant: #9ca3af;
+  --sidebar-w: 220px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  font-size: 13px;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  flex-shrink: 0;
+  height: 100vh;
+}
+.sidebar-brand {
+  padding: 24px 22px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.brand-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+}
+.brand-dot { color: var(--text); opacity: 0.3; }
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+.nav-section-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 10px 6px;
+  margin-top: 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--muted2);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 12.5px;
+  font-weight: 400;
+  border: 1px solid transparent;
+  position: relative;
+}
+.nav-item:hover { background: rgba(0,0,0,0.04); color: var(--text); }
+.nav-item.active {
+  background: rgba(0,184,122,0.08);
+  color: var(--accent);
+  border-color: rgba(0,184,122,0.18);
+}
+.nav-item svg { flex-shrink: 0; opacity: 0.7; }
+.nav-item.active svg { opacity: 1; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+}
+.sidebar-footer {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.avatar-name { font-size: 12px; font-weight: 500; color: var(--text); }
+.avatar-role { font-size: 10px; color: var(--muted); }
+
+/* MAIN */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 58px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.page-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.status-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(0,184,122,0.08);
+  border: 1px solid rgba(0,184,122,0.2);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  color: var(--accent);
+}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.topbar-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.topbar-btn:hover { background: #dde0e6; color: var(--text); }
+
+/* CONTENT */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface2) transparent;
+}
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-track { background: transparent; }
+.content::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* CARDS ROW */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.kpi-card:hover { border-color: var(--border2); }
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+}
+.kpi-card.power::before { background: var(--power); }
+.kpi-card.growing::before { background: var(--growing); }
+.kpi-card.casual::before { background: var(--casual); }
+.kpi-card.dormant::before { background: var(--dormant); }
+.kpi-label {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.kpi-card.power .kpi-value { color: var(--power); }
+.kpi-card.growing .kpi-value { color: var(--growing); }
+.kpi-card.casual .kpi-value { color: var(--casual); }
+.kpi-card.dormant .kpi-value { color: var(--dormant); }
+
+/* GRID LAYOUTS */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+/* PANELS */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.panel-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted2);
+}
+.panel-action {
+  font-size: 10.5px;
+  color: var(--accent);
+  cursor: pointer;
+  opacity: 0.8;
+}
+.panel-action:hover { opacity: 1; }
+
+/* BAR CHARTS */
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.bar-label { font-size: 11px; color: var(--muted2); width: 60px; flex-shrink: 0; text-align: right; }
+.bar-track {
+  flex: 1;
+  background: rgba(0,0,0,0.06);
+  border-radius: 4px;
+  height: 14px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding-left: 7px;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.bar-fill span { font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.9); }
+
+/* SEGMENT TABLE */
+.seg-table { width: 100%; border-collapse: collapse; }
+.seg-table th {
+  text-align: left;
+  font-size: 9.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--muted);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.seg-table td {
+  padding: 9px 10px;
+  font-size: 12px;
+  color: var(--muted2);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.seg-table tr:last-child td { border-bottom: none; }
+.seg-table tr:hover td { background: rgba(0,0,0,0.02); }
+.seg-tag {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.seg-tag.power { background: rgba(0,184,122,0.1); color: var(--power); }
+.seg-tag.growing { background: rgba(59,130,246,0.1); color: var(--growing); }
+.seg-tag.casual { background: rgba(245,158,11,0.1); color: var(--casual); }
+.seg-tag.dormant { background: rgba(156,163,175,0.15); color: var(--muted2); }
+
+/* AB TEST CARDS */
+.ab-seg-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 15px 18px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.ab-seg-card:hover { border-color: var(--border2); }
+.ab-seg-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.ab-seg-card.power::before { background: var(--power); }
+.ab-seg-card.growing::before { background: var(--growing); }
+.ab-seg-card.casual::before { background: var(--casual); }
+.ab-seg-card.dormant::before { background: var(--dormant); }
+.ab-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ab-meta { display: flex; align-items: center; gap: 8px; }
+.ab-btns { display: flex; gap: 6px; }
+.ab-stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 10px; }
+.ab-stat {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+}
+.ab-stat-val { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); }
+.ab-stat-lab { font-size: 9px; color: var(--muted); margin-top: 2px; }
+.ab-footer { display: flex; align-items: center; justify-content: space-between; }
+
+/* BADGE */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9.5px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.badge.running { background: rgba(59,130,246,0.1); color: var(--growing); }
+.badge.pending { background: rgba(245,158,11,0.1); color: var(--casual); }
+.badge.paused { background: rgba(156,163,175,0.15); color: var(--muted2); }
+.badge.sig { background: rgba(0,184,122,0.1); color: var(--accent); }
+.badge.insig { background: rgba(156,163,175,0.12); color: var(--muted2); }
+.badge.border { background: rgba(245,158,11,0.1); color: var(--casual); }
+
+/* BUTTONS */
+.btn {
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  padding: 5px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.btn-green { background: rgba(0,184,122,0.08); border-color: rgba(0,184,122,0.25); color: var(--accent); }
+.btn-green:hover { background: rgba(0,184,122,0.15); }
+.btn-ghost { background: transparent; color: var(--muted2); border-color: var(--border2); }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-red { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.2); color: var(--red); }
+.btn-red:hover { background: rgba(239,68,68,0.12); }
+.btn-ai {
+  background: rgba(139,92,246,0.07);
+  border: 1px solid rgba(139,92,246,0.2);
+  color: #8b5cf6;
+  border-radius: 7px;
+  padding: 5px 11px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+}
+.btn-ai:hover { background: rgba(139,92,246,0.13); }
+.btn-primary-full {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: opacity 0.15s;
+}
+.btn-primary-full:hover { opacity: 0.88; }
+
+/* CAMPAIGN EDITOR */
+.camp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.camp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.camp-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.camp-card.power::before { background: var(--power); }
+.camp-card.growing::before { background: var(--growing); }
+.camp-card.casual::before { background: var(--casual); }
+.camp-card.dormant::before { background: var(--dormant); }
+.field-label {
+  font-size: 9.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  margin-top: 10px;
+}
+.field-label:first-of-type { margin-top: 0; }
+textarea.fi {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  resize: vertical;
+  min-height: 52px;
+  line-height: 1.5;
+  transition: border-color 0.15s;
+}
+textarea.fi:focus { outline: none; border-color: rgba(0,184,122,0.4); background: #fff; }
+select.fi, input.fi {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 11px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+}
+select.fi:focus, input.fi:focus { outline: none; border-color: rgba(0,184,122,0.4); }
+select.fi option { background: #fff; color: var(--text); }
+.prev-box {
+  background: rgba(0,184,122,0.05);
+  border: 1px solid rgba(0,184,122,0.15);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.ai-thinking {
+  background: rgba(139,92,246,0.05);
+  border: 1px solid rgba(139,92,246,0.15);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 10.5px;
+  color: #8b5cf6;
+  margin-top: 6px;
+  display: none;
+  font-style: italic;
+}
+.params-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.param-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+/* CAMP CARD FOOTER — per-segment launch buttons */
+.camp-card-footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.camp-launch-btn {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: opacity 0.15s, background 0.15s;
+  color: #fff;
+}
+.camp-launch-btn:hover { opacity: 0.85; }
+.camp-card.power .camp-launch-btn { background: var(--power); }
+.camp-card.growing .camp-launch-btn { background: var(--growing); }
+.camp-card.casual .camp-launch-btn { background: var(--casual); color: #fff; }
+.camp-card.dormant .camp-launch-btn { background: #6b7280; }
+.camp-status-badge {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────
+   DEMO PAGE — full phone simulation
+───────────────────────────────────────── */
+.demo-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 18px;
+  align-items: start;
+}
+.demo-left { display: flex; flex-direction: column; gap: 14px; }
+.demo-controls-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.demo-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.demo-stat-lab { font-size: 9.5px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+.demo-stat-val { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; color: var(--accent); }
+.demo-counts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.demo-count-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: center;
+}
+.demo-count-num { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; }
+.demo-count-num.upgraded { color: var(--accent); }
+.demo-count-num.skipped { color: var(--red); }
+.demo-count-lab { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-top: 3px; }
+
+.log-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.log-header { padding: 11px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.log-body { padding: 10px 14px; min-height: 80px; }
+.log-row { font-size: 10px; color: var(--muted2); padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,0.04); line-height: 1.6; font-family: monospace; }
+.log-row:last-child { border-bottom: none; }
+.log-accept { color: var(--accent); font-weight: 500; }
+.log-decline { color: #f59e0b; font-weight: 500; }
+.log-empty { font-size: 11px; color: var(--muted); font-style: italic; }
+
+/* PHONE FRAME */
+.phone-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+.phone-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.phone-frame {
+  width: 360px;
+  background: #1a1a2e;
+  border-radius: 40px;
+  padding: 14px 10px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.12);
+  border: 8px solid #111;
+  position: relative;
+}
+.phone-notch {
+  width: 90px;
+  height: 22px;
+  background: #111;
+  border-radius: 0 0 14px 14px;
+  margin: 0 auto 10px;
+}
+.phone-screen {
+  background: #f7f8fa;
+  border-radius: 26px;
+  overflow: hidden;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+.app-statusbar {
+  background: #fff;
+  padding: 6px 16px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #111;
+}
+.app-header {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 16px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.app-header-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.app-header-title {
+  font-size: 11px;
+  color: #374151;
+  font-weight: 500;
+}
+.app-body {
+  flex: 1;
+  padding: 14px;
+  background: #f7f8fa;
+  position: relative;
+}
+/* Simulated editor content */
+.app-editor-area {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  min-height: 180px;
+  font-size: 11px;
+  color: #374151;
+  line-height: 1.7;
+  position: relative;
+}
+.app-editor-cursor {
+  display: inline-block;
+  width: 1.5px;
+  height: 13px;
+  background: var(--accent);
+  vertical-align: middle;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.app-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.app-tool-btn {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: 9px;
+  color: #6b7280;
+  cursor: default;
+  font-weight: 500;
+}
+.app-tool-btn.pro {
+  background: rgba(0,184,122,0.08);
+  border-color: rgba(0,184,122,0.2);
+  color: var(--accent);
+}
+.app-word-count {
+  font-size: 9px;
+  color: #9ca3af;
+  margin-top: 8px;
+  text-align: right;
+}
+
+/* THE UPGRADE NOTIFICATION OVERLAY inside phone */
+.upgrade-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  border-radius: 10px;
+  display: flex;
+  align-items: flex-end;
+  padding: 10px;
+  z-index: 10;
+  animation: overlay-in 0.25s ease;
+}
+@keyframes overlay-in { from{opacity:0} to{opacity:1} }
+.upgrade-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  animation: card-up 0.28s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes card-up { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+.upgrade-card-app {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  margin-bottom: 7px;
+}
+.upgrade-card-headline {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.upgrade-card-body {
+  font-size: 10.5px;
+  color: #6b7280;
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+.upgrade-card-btns {
+  display: flex;
+  gap: 8px;
+}
+.uc-upgrade {
+  flex: 1;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 10px 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: opacity 0.15s;
+}
+.uc-upgrade:hover { opacity: 0.88; }
+.uc-later {
+  flex: 1;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 10px 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s;
+}
+.uc-later:hover { background: #e5e7eb; }
+.phone-trigger-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  width: 360px;
+}
+.phone-trigger-btn {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  padding: 9px 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  text-align: center;
+  transition: background 0.15s;
+}
+.phone-trigger-btn:hover { background: rgba(0,184,122,0.08); }
+
+/* KPI PAGE */
+.kpis-top { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+.kpi-big {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.kpi-big-label { font-size: 9.5px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+.kpi-big-val { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.kpi-big-trend { font-size: 10.5px; color: var(--accent); }
+
+/* MODAL */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(3px);
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+  animation: modal-in 0.2s ease;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+}
+@keyframes modal-in { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+.modal-app { font-size: 10px; color: var(--accent); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.modal-headline { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 8px; line-height: 1.3; }
+.modal-body { font-size: 12px; color: var(--muted2); margin-bottom: 20px; line-height: 1.7; }
+.modal-result {
+  margin-top: 12px;
+  font-size: 11px;
+  border-radius: 7px;
+  padding: 8px;
+  display: none;
+}
+.modal-result.accepted { background: rgba(0,184,122,0.08); color: var(--accent); display: block; }
+.modal-result.declined { background: rgba(245,158,11,0.07); color: #b45309; display: block; }
+
+/* TOAST */
+.toast {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 28px;
+  background: #1f2937;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: #f9fafb;
+  z-index: 998;
+  animation: toast-in 0.2s ease;
+}
+@keyframes toast-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.toast.show { display: block; }
+.toast .t-accent { color: var(--accent); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-name">pulse<span class="brand-dot">.</span></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Analytics</div>
+    <div class="nav-item active" onclick="go('segments',this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 8L13 5M8 8L5 13M8 8L3 7" stroke="currentColor" stroke-width="1.4"/></svg>
+      Segments
+    </div>
+    <div class="nav-item" onclick="go('abtest',this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="6" width="5" height="8" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.4"/></svg>
+      A/B Tests
+    </div>
+    <div class="nav-item" onclick="go('kpis',this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 12L6 7l3 3 5-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      KPIs
+    </div>
+    <div class="nav-section-label">Campaign</div>
+    <div class="nav-item" onclick="go('demo',this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M6 14h4M8 12v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      User Demo
+      <span class="nav-badge">live</span>
+    </div>
+    <div class="nav-item" onclick="go('campaign',this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Campaign Editor
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="avatar">PM</div>
+    <div>
+      <div class="avatar-name">Project Manager</div>
+      <div class="avatar-role">Admin</div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="page-title" id="page-title">Segments</div>
+      <div class="status-pill"><div class="status-dot"></div>4,420 free users</div>
+    </div>
+    <div class="topbar-right">
+      <button class="topbar-btn">Export report</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- SEGMENTS -->
+    <div class="screen active" id="screen-segments">
+      <div class="kpi-row">
+        <div class="kpi-card power"><div class="kpi-label">Power users</div><div class="kpi-value">1,240</div></div>
+        <div class="kpi-card growing"><div class="kpi-label">Growing users</div><div class="kpi-value">1,580</div></div>
+        <div class="kpi-card casual"><div class="kpi-label">Casual users</div><div class="kpi-value">980</div></div>
+        <div class="kpi-card dormant"><div class="kpi-label">Dormant users</div><div class="kpi-value">620</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Exports per week</span></div>
+          <div class="bar-row"><span class="bar-label">Power</span><div class="bar-track"><div class="bar-fill" style="width:92%;background:var(--power)"><span>9.2</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Growing</span><div class="bar-track"><div class="bar-fill" style="width:58%;background:var(--growing)"><span>4.8</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Casual</span><div class="bar-track"><div class="bar-fill" style="width:22%;background:var(--casual)"><span>1.4</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Dormant</span><div class="bar-track"><div class="bar-fill" style="width:5%;background:var(--dormant)"><span>0.2</span></div></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Paywall hits per week</span></div>
+          <div class="bar-row"><span class="bar-label">Power</span><div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--power)"><span>7.4</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Growing</span><div class="bar-track"><div class="bar-fill" style="width:48%;background:var(--growing)"><span>3.1</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Casual</span><div class="bar-track"><div class="bar-fill" style="width:16%;background:var(--casual)"><span>0.9</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Dormant</span><div class="bar-track"><div class="bar-fill" style="width:4%;background:var(--dormant)"><span>0.1</span></div></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Segment breakdown</span></div>
+        <table class="seg-table">
+          <thead><tr><th>Segment</th><th>Users</th><th>Avg sessions/wk</th><th>Avg exports/wk</th><th>Avg paywall hits/wk</th><th>Avg days inactive</th></tr></thead>
+          <tbody>
+            <tr><td><span class="seg-tag power">Power</span></td><td>1,240</td><td>12.4</td><td>9.2</td><td>7.4</td><td>1</td></tr>
+            <tr><td><span class="seg-tag growing">Growing</span></td><td>1,580</td><td>6.1</td><td>4.8</td><td>3.1</td><td>4</td></tr>
+            <tr><td><span class="seg-tag casual">Casual</span></td><td>980</td><td>2.3</td><td>1.4</td><td>0.9</td><td>11</td></tr>
+            <tr><td><span class="seg-tag dormant">Dormant</span></td><td>620</td><td>0.4</td><td>0.2</td><td>0.1</td><td>38</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AB TESTS -->
+    <div class="screen" id="screen-abtest">
+      <div class="ab-seg-card power">
+        <div class="ab-header">
+          <div class="ab-meta"><span class="seg-tag power">Power users</span><span class="badge running" id="st-power">Running</span></div>
+          <div class="ab-btns">
+            <button class="btn btn-green" onclick="launchAB('power')">Launch</button>
+            <button class="btn btn-ghost" onclick="pauseAB('power')">Pause</button>
+            <button class="btn btn-red" onclick="resetAB('power')">Reset</button>
+          </div>
+        </div>
+        <div class="ab-stats-row">
+          <div class="ab-stat"><div class="ab-stat-val">620</div><div class="ab-stat-lab">Control users</div></div>
+          <div class="ab-stat"><div class="ab-stat-val">620</div><div class="ab-stat-lab">Treatment users</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--muted2)">3.2%</div><div class="ab-stat-lab">Control conv.</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--power)">8.7%</div><div class="ab-stat-lab">Treatment conv.</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--power)">+172%</div><div class="ab-stat-lab">Lift</div></div>
+        </div>
+        <div class="ab-footer">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:10.5px;color:var(--muted)">p-value:</span><span style="font-size:12px;font-weight:600;color:var(--text);font-family:'Syne',sans-serif">0.0012</span><span class="badge sig">Statistically significant</span></div>
+          <span style="font-size:11px;color:var(--muted)">14-day window</span>
+        </div>
+      </div>
+      <div class="ab-seg-card growing">
+        <div class="ab-header">
+          <div class="ab-meta"><span class="seg-tag growing">Growing users</span><span class="badge running" id="st-growing">Running</span></div>
+          <div class="ab-btns">
+            <button class="btn btn-green" onclick="launchAB('growing')">Launch</button>
+            <button class="btn btn-ghost" onclick="pauseAB('growing')">Pause</button>
+            <button class="btn btn-red" onclick="resetAB('growing')">Reset</button>
+          </div>
+        </div>
+        <div class="ab-stats-row">
+          <div class="ab-stat"><div class="ab-stat-val">790</div><div class="ab-stat-lab">Control users</div></div>
+          <div class="ab-stat"><div class="ab-stat-val">790</div><div class="ab-stat-lab">Treatment users</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--muted2)">2.2%</div><div class="ab-stat-lab">Control conv.</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--growing)">5.1%</div><div class="ab-stat-lab">Treatment conv.</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--growing)">+132%</div><div class="ab-stat-lab">Lift</div></div>
+        </div>
+        <div class="ab-footer">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:10.5px;color:var(--muted)">p-value:</span><span style="font-size:12px;font-weight:600;color:var(--text);font-family:'Syne',sans-serif">0.0031</span><span class="badge sig">Statistically significant</span></div>
+          <span style="font-size:11px;color:var(--muted)">14-day window</span>
+        </div>
+      </div>
+      <div class="ab-seg-card casual">
+        <div class="ab-header">
+          <div class="ab-meta"><span class="seg-tag casual">Casual users</span><span class="badge pending" id="st-casual">Pending</span></div>
+          <div class="ab-btns">
+            <button class="btn btn-green" onclick="launchAB('casual')">Launch</button>
+            <button class="btn btn-ghost" onclick="pauseAB('casual')">Pause</button>
+            <button class="btn btn-red" onclick="resetAB('casual')">Reset</button>
+          </div>
+        </div>
+        <div class="ab-stats-row">
+          <div class="ab-stat"><div class="ab-stat-val">490</div><div class="ab-stat-lab">Control users</div></div>
+          <div class="ab-stat"><div class="ab-stat-val">490</div><div class="ab-stat-lab">Treatment users</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--muted)">—</div><div class="ab-stat-lab">Control conv.</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--muted)">—</div><div class="ab-stat-lab">Treatment conv.</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--muted)">—</div><div class="ab-stat-lab">Lift</div></div>
+        </div>
+        <div class="ab-footer"><span style="font-size:10.5px;color:var(--muted);font-style:italic">Test not yet launched for this segment</span></div>
+      </div>
+      <div class="ab-seg-card dormant">
+        <div class="ab-header">
+          <div class="ab-meta"><span class="seg-tag dormant">Dormant users</span><span class="badge pending" id="st-dormant">Pending</span></div>
+          <div class="ab-btns">
+            <button class="btn btn-green" onclick="launchAB('dormant')">Launch</button>
+            <button class="btn btn-ghost" onclick="pauseAB('dormant')">Pause</button>
+            <button class="btn btn-red" onclick="resetAB('dormant')">Reset</button>
+          </div>
+        </div>
+        <div class="ab-stats-row">
+          <div class="ab-stat"><div class="ab-stat-val">310</div><div class="ab-stat-lab">Control users</div></div>
+          <div class="ab-stat"><div class="ab-stat-val">310</div><div class="ab-stat-lab">Treatment users</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--muted)">—</div><div class="ab-stat-lab">Control conv.</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--muted)">—</div><div class="ab-stat-lab">Treatment conv.</div></div>
+          <div class="ab-stat"><div class="ab-stat-val" style="color:var(--muted)">—</div><div class="ab-stat-lab">Lift</div></div>
+        </div>
+        <div class="ab-footer"><span style="font-size:10.5px;color:var(--muted);font-style:italic">Test not yet launched for this segment</span></div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="screen" id="screen-kpis">
+      <div class="kpis-top">
+        <div class="kpi-big"><div class="kpi-big-label">Overall conversion rate</div><div class="kpi-big-val">5.4%</div><div class="kpi-big-trend">+2.1% vs baseline</div></div>
+        <div class="kpi-big"><div class="kpi-big-label">Avg time to convert</div><div class="kpi-big-val">6.2d</div><div class="kpi-big-trend">-3.8 days vs control</div></div>
+        <div class="kpi-big"><div class="kpi-big-label">30-day retention</div><div class="kpi-big-val">83%</div><div class="kpi-big-trend">Target: 80%</div></div>
+        <div class="kpi-big"><div class="kpi-big-label">CTR on nudge</div><div class="kpi-big-val">14.3%</div><div class="kpi-big-trend">+6.1% vs control</div></div>
+        <div class="kpi-big"><div class="kpi-big-label">New paid users</div><div class="kpi-big-val">231</div><div class="kpi-big-trend">14-day window</div></div>
+        <div class="kpi-big"><div class="kpi-big-label">Opt-out rate</div><div class="kpi-big-val">1.2%</div><div class="kpi-big-trend">No increase</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Daily conversions — 14-day window</span></div>
+          <svg width="100%" viewBox="0 0 440 80" style="display:block">
+            <defs>
+              <linearGradient id="line-g" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#00b87a" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#00b87a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,70 L32,62 L64,54 L96,50 L128,41 L160,33 L192,27 L224,23 L256,18 L288,14 L320,11 L352,8 L384,6 L416,4 L440,3" fill="none" stroke="#00b87a" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M0,70 L32,62 L64,54 L96,50 L128,41 L160,33 L192,27 L224,23 L256,18 L288,14 L320,11 L352,8 L384,6 L416,4 L440,3 L440,78 L0,78Z" fill="url(#line-g)"/>
+            <path d="M0,70 L32,69 L64,68 L96,67 L128,67 L160,66 L192,65 L224,65 L256,64 L288,64 L320,63 L352,63 L384,62 L416,62 L440,61" fill="none" stroke="#9ca3af" stroke-width="1.4" stroke-dasharray="5 3"/>
+            <text x="400" y="10" style="font-size:8px;fill:#00b87a;font-family:'DM Sans',sans-serif">treatment</text>
+            <text x="400" y="58" style="font-size:8px;fill:#9ca3af;font-family:'DM Sans',sans-serif">control</text>
+            <text x="0" y="78" style="font-size:8px;fill:#9ca3af;font-family:'DM Sans',sans-serif">Day 1</text>
+            <text x="198" y="78" style="font-size:8px;fill:#9ca3af;font-family:'DM Sans',sans-serif">Day 7</text>
+            <text x="400" y="78" style="font-size:8px;fill:#9ca3af;font-family:'DM Sans',sans-serif">Day 14</text>
+          </svg>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Top conversion predictors</span></div>
+          <div class="bar-row"><span class="bar-label">Paywall hits</span><div class="bar-track"><div class="bar-fill" style="width:91%;background:var(--power)"><span>0.91</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Export count</span><div class="bar-track"><div class="bar-fill" style="width:74%;background:var(--power)"><span>0.74</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Session freq</span><div class="bar-track"><div class="bar-fill" style="width:58%;background:var(--growing)"><span>0.58</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Days inactive</span><div class="bar-track"><div class="bar-fill" style="width:38%;background:var(--dormant)"><span>0.38</span></div></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Results summary</span></div>
+        <table class="seg-table">
+          <thead><tr><th>Segment</th><th>Control</th><th>Treatment</th><th>Lift</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td><span class="seg-tag power">Power</span></td><td>3.2%</td><td>8.7%</td><td style="color:var(--power);font-weight:500">+172%</td><td><span class="badge sig">Significant</span></td></tr>
+            <tr><td><span class="seg-tag growing">Growing</span></td><td>2.2%</td><td>5.1%</td><td style="color:var(--power);font-weight:500">+132%</td><td><span class="badge sig">Significant</span></td></tr>
+            <tr><td><span class="seg-tag casual">Casual</span></td><td>1.0%</td><td>1.9%</td><td style="color:var(--casual);font-weight:500">+90%</td><td><span class="badge border">Borderline</span></td></tr>
+            <tr><td><span class="seg-tag dormant">Dormant</span></td><td>0.4%</td><td>0.7%</td><td style="color:var(--muted2);font-weight:500">+75%</td><td><span class="badge insig">Not significant</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- USER DEMO -->
+    <div class="screen" id="screen-demo">
+      <div class="demo-layout">
+
+        <!-- LEFT: controls + log -->
+        <div class="demo-left">
+          <div class="demo-controls-row">
+            <div class="demo-stat">
+              <div class="demo-stat-lab">Simulated segment</div>
+              <select class="fi" id="demo-seg" onchange="updateDemoMsg()" style="margin-top:6px">
+                <option value="power">Power user</option>
+                <option value="growing">Growing user</option>
+                <option value="casual">Casual user</option>
+                <option value="dormant">Dormant user</option>
+              </select>
+            </div>
+            <div class="demo-stat">
+              <div class="demo-stat-lab">A/B group</div>
+              <select class="fi" id="demo-group" onchange="updateDemoMsg()" style="margin-top:6px">
+                <option value="treatment">Treatment (targeted)</option>
+                <option value="control">Control (generic)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="demo-counts-row">
+            <div class="demo-count-card">
+              <div class="demo-count-num upgraded" id="count-upgraded">0</div>
+              <div class="demo-count-lab">Upgraded</div>
+            </div>
+            <div class="demo-count-card">
+              <div class="demo-count-num skipped" id="count-skipped">0</div>
+              <div class="demo-count-lab">Try Later</div>
+            </div>
+          </div>
+
+          <div class="log-panel">
+            <div class="log-header">
+              <span class="panel-title">Response log — backend events</span>
+              <span class="panel-action" onclick="clearLog()">Clear log</span>
+            </div>
+            <div class="log-body" id="response-log"><div class="log-empty">No responses yet. Tap "Show upgrade message" on the phone →</div></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: phone frame -->
+        <div class="phone-wrap">
+          <div class="phone-label">Live user preview</div>
+          <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="app-statusbar">
+                <span>9:41</span>
+                <span>▲▲▲ ■■■</span>
+              </div>
+              <div class="app-header">
+                <div class="app-header-logo">Armat</div>
+                <div class="app-header-title">New poem · Draft</div>
+              </div>
+              <div class="app-body">
+                <div class="app-editor-area">
+                  <div class="app-toolbar">
+                    <span class="app-tool-btn">Bold</span>
+                    <span class="app-tool-btn">Italic</span>
+                    <span class="app-tool-btn pro">Thesaurus ✦</span>
+                    <span class="app-tool-btn pro">Rhyme ✦</span>
+                    <span class="app-tool-btn pro">Meter ✦</span>
+                  </div>
+                  <div style="color:#374151;font-size:11px;line-height:1.8">
+                    Անապատի լռության մեջ<br>
+                    Բառերը թռչում են անձայն,<br>
+                    Հայոց լեզվի հոգու ծայրին<br>
+                    Ամեն տող — մի նոր կյանք<span class="app-editor-cursor"></span>
+                  </div>
+                  <div class="app-word-count">47 words · 4 lines</div>
+                </div>
+
+                <!-- UPGRADE OVERLAY — shown when triggered -->
+                <div class="upgrade-overlay" id="upgrade-overlay" style="display:none">
+                  <div class="upgrade-card">
+                    <div class="upgrade-card-app">Armat · Upgrade</div>
+                    <div class="upgrade-card-headline" id="uc-headline">Unlock your full potential</div>
+                    <div class="upgrade-card-body" id="uc-body">You've been creating great content. Go Pro to remove all limits.</div>
+                    <div class="upgrade-card-btns">
+                      <button class="uc-upgrade" onclick="respond('upgraded')">Upgrade</button>
+                      <button class="uc-later" onclick="respond('later')">Try later</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="phone-trigger-row">
+            <button class="phone-trigger-btn" onclick="showUpgrade()">▶ Show upgrade message</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CAMPAIGN EDITOR -->
+    <div class="screen" id="screen-campaign">
+      <div class="params-row">
+        <div class="param-block"><div class="field-label">Pro price (AMD)</div><input class="fi" type="number" id="g-price" value="2900" oninput="refreshPrev()"></div>
+        <div class="param-block"><div class="field-label">Discount % (dormant)</div><input class="fi" type="number" id="g-discount" value="20" oninput="refreshPrev()"></div>
+        <div class="param-block"><div class="field-label">Template count</div><input class="fi" type="number" id="g-templates" value="120" oninput="refreshPrev()"></div>
+      </div>
+      <div class="camp-grid">
+
+        <!-- POWER -->
+        <div class="camp-card power">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span class="seg-tag power">Power users</span>
+            <button class="btn-ai" onclick="writeAI('power')"><svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 2v3M8 11v3M2 8h3M11 8h3M4.2 4.2l2.1 2.1M9.7 9.7l2.1 2.1M4.2 11.8l2.1-2.1M9.7 6.3l2.1-2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Write with AI</button>
+          </div>
+          <div class="field-label">Message template</div>
+          <textarea class="fi" id="msg-power" oninput="updatePrev('power')">You've exported {{export_count}} times and hit limits {{paywall_hits}} times — go unlimited for AMD {{price}}/month.</textarea>
+          <div class="ai-thinking" id="ai-power">AI is refining this message based on A/B test performance...</div>
+          <div class="field-label">Preview</div>
+          <div class="prev-box" id="prev-power">You've exported 9 times and hit limits 7 times — go unlimited for AMD 2,900/month.</div>
+          <div class="field-label">Channel</div>
+          <select class="fi"><option>In-app popup</option><option>Push notification</option><option>Email</option></select>
+          <div class="field-label">Trigger</div>
+          <select class="fi"><option>On paywall hit</option><option>On app open</option><option>After 3rd export</option></select>
+          <div class="camp-card-footer">
+            <button class="camp-launch-btn" onclick="campLaunch('power', this)">Launch A/B test</button>
+            <span class="camp-status-badge" id="camp-st-power" style="background:rgba(245,158,11,0.1);color:#b45309">Pending</span>
+          </div>
+        </div>
+
+        <!-- GROWING -->
+        <div class="camp-card growing">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span class="seg-tag growing">Growing users</span>
+            <button class="btn-ai" onclick="writeAI('growing')"><svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 2v3M8 11v3M2 8h3M11 8h3M4.2 4.2l2.1 2.1M9.7 9.7l2.1 2.1M4.2 11.8l2.1-2.1M9.7 6.3l2.1-2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Write with AI</button>
+          </div>
+          <div class="field-label">Message template</div>
+          <textarea class="fi" id="msg-growing" oninput="updatePrev('growing')">You're growing fast! Unlock HD exports, custom fonts and more — AMD {{price}}/month.</textarea>
+          <div class="ai-thinking" id="ai-growing">AI is refining this message based on A/B test performance...</div>
+          <div class="field-label">Preview</div>
+          <div class="prev-box" id="prev-growing">You're growing fast! Unlock HD exports, custom fonts and more — AMD 2,900/month.</div>
+          <div class="field-label">Channel</div>
+          <select class="fi"><option>In-app popup</option><option selected>Email</option><option>Push notification</option></select>
+          <div class="field-label">Trigger</div>
+          <select class="fi"><option>On paywall hit</option><option selected>On app open</option></select>
+          <div class="camp-card-footer">
+            <button class="camp-launch-btn" onclick="campLaunch('growing', this)">Launch A/B test</button>
+            <span class="camp-status-badge" id="camp-st-growing" style="background:rgba(245,158,11,0.1);color:#b45309">Pending</span>
+          </div>
+        </div>
+
+        <!-- CASUAL -->
+        <div class="camp-card casual">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span class="seg-tag casual">Casual users</span>
+            <button class="btn-ai" onclick="writeAI('casual')"><svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 2v3M8 11v3M2 8h3M11 8h3M4.2 4.2l2.1 2.1M9.7 9.7l2.1 2.1M4.2 11.8l2.1-2.1M9.7 6.3l2.1-2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Write with AI</button>
+          </div>
+          <div class="field-label">Message template</div>
+          <textarea class="fi" id="msg-casual" oninput="updatePrev('casual')">Did you know Pro users get {{template_count}} exclusive Armenian templates? Try Pro free for 7 days.</textarea>
+          <div class="ai-thinking" id="ai-casual">AI is refining this message based on A/B test performance...</div>
+          <div class="field-label">Preview</div>
+          <div class="prev-box" id="prev-casual">Did you know Pro users get 120 exclusive Armenian templates? Try Pro free for 7 days.</div>
+          <div class="field-label">Channel</div>
+          <select class="fi"><option>In-app popup</option><option selected>Push notification</option></select>
+          <div class="field-label">Trigger</div>
+          <select class="fi"><option>On paywall hit</option><option>On app open</option><option selected>After 3rd export</option></select>
+          <div class="camp-card-footer">
+            <button class="camp-launch-btn" onclick="campLaunch('casual', this)">Launch A/B test</button>
+            <span class="camp-status-badge" id="camp-st-casual" style="background:rgba(245,158,11,0.1);color:#b45309">Pending</span>
+          </div>
+        </div>
+
+        <!-- DORMANT -->
+        <div class="camp-card dormant">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span class="seg-tag dormant">Dormant users</span>
+            <button class="btn-ai" onclick="writeAI('dormant')"><svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 2v3M8 11v3M2 8h3M11 8h3M4.2 4.2l2.1 2.1M9.7 9.7l2.1 2.1M4.2 11.8l2.1-2.1M9.7 6.3l2.1-2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Write with AI</button>
+          </div>
+          <div class="field-label">Message template</div>
+          <textarea class="fi" id="msg-dormant" oninput="updatePrev('dormant')">We miss you! Come back and get {{discount}}% off your first Pro month. Offer expires in 48h.</textarea>
+          <div class="ai-thinking" id="ai-dormant">AI is refining this message based on A/B test performance...</div>
+          <div class="field-label">Preview</div>
+          <div class="prev-box" id="prev-dormant">We miss you! Come back and get 20% off your first Pro month. Offer expires in 48h.</div>
+          <div class="field-label">Channel</div>
+          <select class="fi"><option selected>Email</option><option>In-app popup</option><option>Push notification</option></select>
+          <div class="field-label">Trigger</div>
+          <select class="fi"><option selected>On app open</option><option>On paywall hit</option></select>
+          <div class="camp-card-footer">
+            <button class="camp-launch-btn" onclick="campLaunch('dormant', this)">Launch A/B test</button>
+            <span class="camp-status-badge" id="camp-st-dormant" style="background:rgba(245,158,11,0.1);color:#b45309">Pending</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="global-toast"></div>
+
+<script>
+const headings = { segments:'Segments', abtest:'A/B Tests', kpis:'KPIs', demo:'User Demo', campaign:'Campaign Editor' };
+
+const defaultMsgs = {
+  power:   "You've exported {{export_count}} times and hit limits {{paywall_hits}} times — go unlimited for AMD {{price}}/month.",
+  growing: "You're growing fast! Unlock HD exports, custom fonts and more — AMD {{price}}/month.",
+  casual:  "Did you know Pro users get {{template_count}} exclusive Armenian templates? Try Pro free for 7 days.",
+  dormant: "We miss you! Come back and get {{discount}}% off your first Pro month. Offer expires in 48h."
+};
+const aiMsgs = {
+  power:   "Your Armenian content deserves no limits. You've hit Pro features {{paywall_hits}} times this week — upgrade for AMD {{price}}/month.",
+  growing: "You're on a roll — {{export_count}} pieces created. Unlock unlimited generation, advanced templates and more for AMD {{price}}/month.",
+  casual:  "Explore {{template_count}} exclusive Armenian writing templates only on Pro. Start your free 7-day trial today.",
+  dormant: "We saved your work. Come back and create — get {{discount}}% off Pro for your first month. Expires in 48 hours."
+};
+
+let countUpgraded = 0, countLater = 0, logs = [];
+
+function go(id, el) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('page-title').textContent = headings[id];
+}
+
+function getParams() {
+  return {
+    price: document.getElementById('g-price').value || '2900',
+    discount: document.getElementById('g-discount').value || '20',
+    template_count: document.getElementById('g-templates').value || '120',
+    export_count: '9', paywall_hits: '7'
+  };
+}
+
+function fill(tpl, p) { return tpl.replace(/\{\{(\w+)\}\}/g, (m, k) => p[k] || m); }
+
+function updatePrev(seg) {
+  const tpl = document.getElementById('msg-' + seg).value;
+  document.getElementById('prev-' + seg).textContent = fill(tpl, getParams());
+  if (document.getElementById('demo-seg') && document.getElementById('demo-seg').value === seg) updateDemoMsg();
+}
+
+function refreshPrev() { ['power','growing','casual','dormant'].forEach(s => updatePrev(s)); }
+
+function writeAI(seg) {
+  const btn = event.target.closest('.btn-ai');
+  btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none';
+  document.getElementById('ai-' + seg).style.display = 'block';
+  setTimeout(() => {
+    document.getElementById('msg-' + seg).value = aiMsgs[seg];
+    updatePrev(seg);
+    document.getElementById('ai-' + seg).style.display = 'none';
+    btn.style.opacity = '1'; btn.style.pointerEvents = '';
+    showToast('AI message generated for ' + seg + ' segment');
+  }, 1800);
+}
+
+function launchAB(seg) {
+  const el = document.getElementById('st-' + seg);
+  el.textContent = 'Running'; el.className = 'badge running';
+  showToast('A/B test launched for ' + seg + ' segment — 14-day window started');
+}
+function pauseAB(seg) {
+  const el = document.getElementById('st-' + seg);
+  el.textContent = 'Paused'; el.className = 'badge paused';
+  showToast('Test paused for ' + seg + ' segment');
+}
+function resetAB(seg) {
+  const el = document.getElementById('st-' + seg);
+  el.textContent = 'Pending'; el.className = 'badge pending';
+  showToast('Test reset for ' + seg + ' segment');
+}
+
+/* Per-segment launch in campaign editor */
+function campLaunch(seg, btn) {
+  const badge = document.getElementById('camp-st-' + seg);
+  const colors = { power:'var(--power)', growing:'var(--growing)', casual:'var(--casual)', dormant:'#6b7280' };
+  badge.textContent = 'Running';
+  badge.style.background = 'rgba(0,184,122,0.1)';
+  badge.style.color = colors[seg] || 'var(--accent)';
+  btn.textContent = 'Running ✓';
+  btn.style.opacity = '0.6';
+  btn.style.cursor = 'default';
+  btn.onclick = null;
+  showToast('A/B test launched for ' + seg + ' users — 14-day window started');
+}
+
+/* Demo phone logic */
+function updateDemoMsg() {
+  const seg = document.getElementById('demo-seg').value;
+  const grp = document.getElementById('demo-group').value;
+  const p = getParams();
+  let headline, body;
+  if (grp === 'control') {
+    headline = 'Upgrade to Pro';
+    body = 'Unlock all features for AMD ' + p.price + '/month.';
+  } else {
+    const tpl = document.getElementById('msg-' + seg) ? document.getElementById('msg-' + seg).value : defaultMsgs[seg];
+    const full = fill(tpl, p);
+    const parts = full.split('—');
+    headline = parts[0].trim();
+    body = parts[1] ? parts[1].trim() : full;
+  }
+  document.getElementById('uc-headline').textContent = headline;
+  document.getElementById('uc-body').textContent = body;
+}
+
+function showUpgrade() {
+  updateDemoMsg();
+  document.getElementById('upgrade-overlay').style.display = 'flex';
+}
+
+function respond(decision) {
+  const seg = document.getElementById('demo-seg').value;
+  const grp = document.getElementById('demo-group').value;
+  const ts = new Date().toLocaleTimeString();
+  const uid = 'usr_' + Math.floor(Math.random() * 9000 + 1000);
+
+  document.getElementById('upgrade-overlay').style.display = 'none';
+
+  if (decision === 'upgraded') {
+    countUpgraded++;
+    document.getElementById('count-upgraded').textContent = countUpgraded;
+    logs.unshift({ ts, seg, grp, decision: 'upgraded', uid });
+    showToast('Upgrade recorded for ' + seg + ' · ' + grp + ' group');
+  } else {
+    countLater++;
+    document.getElementById('count-skipped').textContent = countLater;
+    logs.unshift({ ts, seg, grp, decision: 'try_later', uid });
+  }
+
+  const logEl = document.getElementById('response-log');
+  logEl.innerHTML = logs.slice(0, 12).map(l =>
+    `<div class="log-row">[${l.ts}] &nbsp;<span style="color:var(--muted2)">${l.uid}</span> &nbsp;·&nbsp; seg=<strong style="color:var(--text)">${l.seg}</strong> &nbsp;·&nbsp; group=${l.grp} &nbsp;·&nbsp; decision=<span class="${l.decision === 'upgraded' ? 'log-accept' : 'log-decline'}">${l.decision}</span></div>`
+  ).join('');
+}
+
+function clearLog() {
+  logs = [];
+  countUpgraded = 0; countLater = 0;
+  document.getElementById('count-upgraded').textContent = '0';
+  document.getElementById('count-skipped').textContent = '0';
+  document.getElementById('response-log').innerHTML = '<div class="log-empty">Log cleared.</div>';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('global-toast');
+  t.innerHTML = '<span class="t-accent">pulse</span> &nbsp;' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+document.getElementById('demo-seg').addEventListener('change', updateDemoMsg);
+document.getElementById('demo-group').addEventListener('change', updateDemoMsg);
+updateDemoMsg();
+</script>
+</body>
+</html>
