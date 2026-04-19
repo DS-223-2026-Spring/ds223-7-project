@@ -2,7 +2,7 @@
 
 DS-223 Marketing Analytics · Group 7 · Spring 2026
 
-A behavioral segmentation and A/B testing pipeline for Armat — an Armenian writing SaaS.
+A behavioral segmentation and A/B testing pipeline.
 
 ## Sections
 
