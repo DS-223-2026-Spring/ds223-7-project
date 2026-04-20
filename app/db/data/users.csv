@@ -1,0 +1,4 @@
+user_id,email,display_name,plan,status
+550e8400-e29b-41d4-a716-446655440001,ani@example.com,Ani Petrosyan,free,active
+550e8400-e29b-41d4-a716-446655440002,vardan@example.com,Vardan Hakobyan,free,active
+550e8400-e29b-41d4-a716-446655440003,nare@example.com,Nare Grigoryan,pro,active
