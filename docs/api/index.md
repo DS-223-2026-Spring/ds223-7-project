@@ -1,3 +1,4 @@
+<<<<<<< backend
 # API Layer
 
 **Owner:** Backend Developer · **Branch:** `backend` · **Container:** `back`
@@ -30,3 +31,6 @@ Quick summary: 13 endpoints across 5 screens (Segments, A/B Tests, KPIs, Campaig
 2. Never update trigger-maintained columns in code
 3. Every endpoint returns graceful empty results when DB is unreachable
 4. Internal DB hostname is `db`, internal backend hostname is `backend`
+=======
+# API
+>>>>>>> main

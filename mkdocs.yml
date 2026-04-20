@@ -1,0 +1,20 @@
+site_name: Pulse — Free-to-Paid Conversion Platform
+site_description: DS-223 Marketing Analytics · Group 7 · Spring 2026
+repo_url: https://github.com/DS-223-2026-Spring/ds223-7-project
+
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Overview:
+      - Problem & Solution: overview/problem.md
+      - Architecture: overview/architecture.md
+      - Roadmap: overview/roadmap.md
+      - KPIs: overview/kpis.md
+  - Database: database/index.md
+  - ETL Pipeline: etl/index.md
+  - Model Engine: model/index.md
+  - API: api/index.md
+  - Dashboard: dashboard/index.md
+  - About: about/team.md
