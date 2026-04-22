@@ -2,12 +2,13 @@
 
 ## Milestone 1 — Foundation (complete)
 
-- [x] Problem definition and business case
-- [x] User segmentation model (Power / Growing / Casual / Dormant)
-- [x] Basic prototype (Overview dashboard)
-- [x] Should-Have prototype (full sidebar app with Campaign Editor, A/B Tests, KPIs)
-- [x] Database schema design
-- [x] Flowchart and architecture diagram
+- [x] Problem definition and business case (Armat free-to-paid conversion)
+- [x] User segmentation model — Power (1,240), Growing (1,580), Casual (980), Dormant (620)
+- [x] Basic prototype — Overview dashboard with KPI cards and segment funnel
+- [x] Should-Have prototype — full sidebar app with 5 screens: Segments, A/B Tests, KPIs, Campaign Editor, User Demo
+- [x] Database schema design (`01_schema.sql`)
+- [x] Flowchart and product roadmap diagram
+- [x] Team roles defined: PM, Backend, Frontend, DB, Data Scientist
 
 ## Milestone 2 — Infrastructure
 

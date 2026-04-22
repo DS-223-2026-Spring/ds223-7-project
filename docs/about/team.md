@@ -2,10 +2,13 @@
 
 ## DS-223 Group 7 — Spring 2026
 
-| Member | GitHub | Role |
-|--------|--------|------|
-| Silva Vardanian | @silvavardanian | Project Lead / Full-stack |
-| Marine Vardanyan | @marinevardanyan1 | Backend / Database |
+| Name | Role |
+|------|------|
+| Silva Vardanyan | Product Manager |
+| Albert Hakobyan | Backend Developer |
+| Anzhelika Simonyan | Frontend Developer |
+| Narek Dilbaryan | Database Engineer |
+| Areg Avagyan | Data Scientist |
 
 ## Course
 
