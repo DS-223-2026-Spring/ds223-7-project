@@ -1,3 +1,17 @@
+# Pulse — Docker Compose
+# ──────────────────────────────────────────────────────
+# Setup (first time):
+#   1. Make sure .env exists at the repo root with credentials filled in
+#   2. Run: docker-compose up --build
+#
+# Services and ports:
+#   db       → localhost:5433  (PostgreSQL)
+#   pgadmin  → localhost:5050  (DB admin UI, login: admin@admin.com / admin)
+#   api      → localhost:8008  (FastAPI — Swagger UI at /docs)
+#   app      → localhost:8501  (Streamlit dashboard)
+#   etl      → runs once, seeds the database, then exits
+# ──────────────────────────────────────────────────────
+
 services:
 
   db:
