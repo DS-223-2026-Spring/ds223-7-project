@@ -12,7 +12,7 @@
 
 ## Course
 
-**DS-223 — Data Engineering**
+**DS-223 — Marketing Analytics**
 American University of Armenia · Spring 2026
 
 ## Project
