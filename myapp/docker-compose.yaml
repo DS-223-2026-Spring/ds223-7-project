@@ -2,21 +2,22 @@
 # ──────────────────────────────────────────────────────
 # Setup (first time):
 #   1. Make sure .env exists at the repo root with credentials filled in
-#   2. Run: docker-compose up --build
+#   2. cd myapp && docker-compose up --build
 #
 # Services and ports:
 #   db       → localhost:5433  (PostgreSQL)
 #   pgadmin  → localhost:5050  (DB admin UI, login: admin@admin.com / admin)
-#   api      → localhost:8008  (FastAPI — Swagger UI at /docs)
-#   app      → localhost:8501  (Streamlit dashboard)
+#   back     → localhost:8008  (FastAPI — Swagger UI at /docs)
+#   front    → localhost:8501  (Streamlit dashboard)
 #   etl      → runs once, seeds the database, then exits
+#   ds       → localhost:8888  (Data Science / Jupyter)
 # ──────────────────────────────────────────────────────
 
 services:
 
   db:
     image: postgres:16-alpine
-    container_name: pulse_db
+    container_name: db
     restart: unless-stopped
     environment:
       POSTGRES_DB:       ${DB_NAME}
@@ -35,7 +36,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: pulse_pgadmin
+    container_name: pgadmin
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL:    ${PGADMIN_DEFAULT_EMAIL}
@@ -46,9 +47,9 @@ services:
       db:
         condition: service_healthy
 
-  api:
+  back:
     build: ./api
-    container_name: pulse_api
+    container_name: back
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
@@ -58,23 +59,47 @@ services:
       db:
         condition: service_healthy
 
-  app:
+  front:
     build: ./app
-    container_name: pulse_app
+    container_name: front
     restart: unless-stopped
     environment:
-      API_URL: http://api:8000
+      API_URL: http://back:8000
     ports:
       - "8501:8501"
     depends_on:
-      - api
+      - back
 
   etl:
     build: ./etl
-    container_name: pulse_etl
+    container_name: etl
     restart: "no"
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      DB_HOST:      db
+      DB_PORT:      5432
+      DB_NAME:      ${DB_NAME}
+      DB_USER:      ${DB_USER}
+      DB_PASSWORD:  ${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  ds:
+    build: ./ds
+    container_name: ds
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      DB_HOST:      db
+      DB_PORT:      5432
+      DB_NAME:      ${DB_NAME}
+      DB_USER:      ${DB_USER}
+      DB_PASSWORD:  ${DB_PASSWORD}
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./ds:/app
     depends_on:
       db:
         condition: service_healthy
