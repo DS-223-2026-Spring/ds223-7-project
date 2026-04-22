@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from db import get_db
+from Database import get_db
 from schemas.campaigns import (
     CampaignOut,
     CampaignUpdate,
