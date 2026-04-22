@@ -1,6 +1,7 @@
 # Custom
 postgres_data/
 pgadmin_data/
+.claude/
 
 .DS_Store
 
@@ -136,4 +137,3 @@ cython_debug/
 
 # PyCharm
 .idea/
-.env
