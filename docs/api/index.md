@@ -1,36 +1,37 @@
-<<<<<<< backend
 # API Layer
 
-**Owner:** Backend Developer · **Branch:** `backend` · **Container:** `back`
+**Container:** `pulse_api` · **Port:** `8008` · **Build:** `myapp/api`
 
 ## Overview
 
-The Pulse API is a FastAPI service that exposes the database views and campaign management logic to the Streamlit frontend. All dashboard reads use pre-built SQL views. Write operations target the campaign, message, and conversion tables.
+The Pulse API is a FastAPI service that exposes database views and campaign management logic to the Streamlit frontend. All dashboard reads use pre-built SQL views (`v_*`). Write operations target campaign, message, and conversion tables.
 
-**Base URL:** `http://backend:8000` (inside Docker network)
+**Base URL (internal):** `http://api:8000`
 
-**Interactive docs:** `http://localhost:8000/docs` (Swagger UI, auto-generated)
+**Swagger UI:** `http://localhost:8008/docs`
 
 ## Endpoints
 
-See the full endpoint reference in `app/back/docs/api_docs.md`.
+13 endpoints across 5 routers plus a `/health` liveness probe:
 
-Quick summary: 13 endpoints across 5 screens (Segments, A/B Tests, KPIs, Campaign Editor, User Demo) plus a `/health` liveness probe.
+| Router | Prefix | Description |
+|--------|--------|-------------|
+| `segments` | `/api` | Segment summary with funnel metrics |
+| `ab_tests` | `/api/ab-tests` | A/B test results and comparisons |
+| `kpis` | `/api` | Platform-wide KPI overview |
+| `campaigns` | `/api` | Campaign CRUD + launch/reset + message edit |
+| `demo` | `/api` | User-level demo lookup |
 
-## Tech stack
+## Tech Stack
 
-- **FastAPI** — async-capable web framework with automatic OpenAPI generation
-- **SQLAlchemy** — database access layer (raw `text()` queries against views)
-- **Pydantic** — request/response validation and serialization
+- **FastAPI** — OpenAPI generation, dependency injection
+- **SQLAlchemy** — raw `text()` queries against `v_*` views
+- **Pydantic** — request/response validation
 - **psycopg2** — PostgreSQL driver
-- **uvicorn** — ASGI server with hot-reload in development
+- **uvicorn** — ASGI server
 
-## Key rules
+## Key Rules
 
-1. Never query base tables directly for dashboard data — use `v_*` views
-2. Never update trigger-maintained columns in code
+1. Never query base tables for dashboard reads — use `v_*` views
+2. Internal DB hostname is `db` (not `localhost`)
 3. Every endpoint returns graceful empty results when DB is unreachable
-4. Internal DB hostname is `db`, internal backend hostname is `backend`
-=======
-# API
->>>>>>> main

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from db import get_db
+from Database import get_db
 from schemas.demo import DemoMessageOut, DemoResponse
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])

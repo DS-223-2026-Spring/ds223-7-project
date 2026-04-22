@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from db import get_db
+from Database import get_db
 from schemas.kpis import PlatformKPIs
 
 router = APIRouter(prefix="/api/kpis", tags=["kpis"])

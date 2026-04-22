@@ -12,7 +12,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./app/db/init:/docker-entrypoint-initdb.d
+      - ./etl/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
@@ -28,6 +28,39 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
       - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: ./api
+    container_name: pulse_api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    ports:
+      - "8008:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build: ./app
+    container_name: pulse_app
+    restart: unless-stopped
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
+  etl:
+    build: ./etl
+    container_name: pulse_etl
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
     depends_on:
       db:
         condition: service_healthy
