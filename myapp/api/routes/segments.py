@@ -9,8 +9,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from Database import get_db
-from schemas.segments import SegmentCount, SegmentBehavioralAvg
+from database import get_db
+from schema import SegmentCount, SegmentBehavioralAvg
 
 router = APIRouter(prefix="/api/segments", tags=["segments"])
 
@@ -26,7 +26,6 @@ def get_segment_counts(db: Session = Depends(get_db)):
         rows = db.execute(text("SELECT * FROM v_segment_counts")).mappings().all()
         return [SegmentCount(**row) for row in rows]
     except Exception:
-        # Graceful empty response — no crashes (per master prompt)
         return []
 
 
@@ -44,8 +43,8 @@ def get_behavioral_averages(db: Session = Depends(get_db)):
         return [
             SegmentBehavioralAvg(
                 segment_name=r["segment_name"],
-                label=r["segment_name"],          # view lacks label column
-                color_hex="",                      # view lacks color column
+                label=r["segment_name"],
+                color_hex="",
                 avg_sessions_per_week=r.get("avg_sessions_per_week"),
                 avg_paywall_hits=r.get("avg_paywall_hits"),
                 avg_synonym_depth=r.get("avg_synonym_depth"),

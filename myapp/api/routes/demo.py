@@ -9,8 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from Database import get_db
-from schemas.demo import DemoMessageOut, DemoResponse
+from database import get_db
+from schema import DemoMessageOut, DemoResponse
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])
 
@@ -19,11 +19,9 @@ router = APIRouter(prefix="/api/demo", tags=["demo"])
 def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
     """Get the rendered upgrade message for a segment.
 
-    This powers the phone mockup on the User Demo screen.
-    It reads the active message template for the segment's campaign,
-    then substitutes {{placeholders}} with global_params values.
+    Powers the phone mockup on the User Demo screen.
+    Substitutes {{placeholders}} with global_params values.
     """
-    # Fetch campaign + active message + segment info in one query
     row = db.execute(
         text("""
             SELECT
@@ -57,7 +55,6 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
     rendered = rendered.replace("{{price}}", param_map.get("pro_price_amd", "2900"))
     rendered = rendered.replace("{{discount}}", param_map.get("dormant_discount", "20"))
     rendered = rendered.replace("{{template_count}}", param_map.get("template_count", "120"))
-    # Dynamic user-level placeholders — use dummy values for now
     rendered = rendered.replace("{{export_count}}", "47")
     rendered = rendered.replace("{{paywall_hits}}", "23")
 
@@ -73,12 +70,7 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
 
 @router.post("/respond")
 def record_demo_response(payload: DemoResponse, db: Session = Depends(get_db)):
-    """Record a user's upgrade / try-later decision from the Demo screen.
-
-    Inserts a row into conversion_outcomes.  In the real product this
-    would look up the user and test — for the demo we use a dummy user.
-    """
-    # For the demo, pick a random user from the segment
+    """Record a user's upgrade / try-later decision from the Demo screen."""
     user = db.execute(
         text("""
             SELECT u.user_id
@@ -97,7 +89,6 @@ def record_demo_response(payload: DemoResponse, db: Session = Depends(get_db)):
             detail=f"No users found in segment '{payload.segment_name}'",
         )
 
-    # Get the campaign for this segment
     campaign = db.execute(
         text("""
             SELECT c.campaign_id, c.active_message_id
