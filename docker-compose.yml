@@ -1,7 +1,6 @@
 # Pulse — Docker Compose
 # ──────────────────────────────────────────────────────
-# Run from inside this folder:
-#   cd pulse
+# Run from the repo root:
 #   docker-compose up --build
 #
 # Services and ports:
@@ -27,7 +26,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./etl/init:/docker-entrypoint-initdb.d
+      - ./pulse/etl/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
@@ -48,7 +47,7 @@ services:
         condition: service_healthy
 
   back:
-    build: ./api
+    build: ./pulse/api
     container_name: back
     restart: unless-stopped
     environment:
@@ -60,7 +59,7 @@ services:
         condition: service_healthy
 
   front:
-    build: ./app
+    build: ./pulse/app
     container_name: front
     restart: unless-stopped
     environment:
@@ -71,7 +70,7 @@ services:
       - back
 
   etl:
-    build: ./etl
+    build: ./pulse/etl
     container_name: etl
     restart: "no"
     environment:
@@ -86,7 +85,7 @@ services:
         condition: service_healthy
 
   ds:
-    build: ./ds
+    build: ./pulse/ds
     container_name: ds
     restart: unless-stopped
     environment:
@@ -99,7 +98,7 @@ services:
     ports:
       - "8888:8888"
     volumes:
-      - ./ds:/app
+      - ./pulse/ds:/app
     depends_on:
       db:
         condition: service_healthy
