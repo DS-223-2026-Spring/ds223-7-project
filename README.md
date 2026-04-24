@@ -33,11 +33,11 @@ Pulse is a microservice application that helps Armat (an Armenian writing SaaS) 
 pulse/
 ├── api/        FastAPI backend         →  localhost:8008
 ├── app/        Streamlit dashboard     →  localhost:8501
-├── ds/         Jupyter notebooks       →  localhost:8888
+├── ds/         Data science notebooks
 └── etl/        One-time DB seed pipeline
 ```
 
-Six Docker containers run together:
+Five Docker containers run together:
 
 | Container | Description | Port |
 |-----------|-------------|------|
@@ -45,7 +45,6 @@ Six Docker containers run together:
 | `pgadmin` | pgAdmin UI | 5050 |
 | `back` | FastAPI REST backend | 8008 |
 | `front` | Streamlit dashboard | 8501 |
-| `ds` | Jupyter data science notebooks | 8888 |
 | `etl` | ETL seed runner (exits after run) | — |
 
 ---
@@ -62,7 +61,7 @@ cd ds223-7-project
 # 2. Credentials are already set in pulse/.env (dev defaults)
 #    Edit pulse/.env if you want custom values
 
-# 3. Build and start all containers
+# 3. Navigate to the product folder and start all containers
 cd pulse
 docker-compose up --build
 ```
@@ -72,7 +71,6 @@ docker-compose up --build
 | Streamlit dashboard | http://localhost:8501 |
 | FastAPI Swagger UI | http://localhost:8008/docs |
 | pgAdmin | http://localhost:5050 |
-| Jupyter notebooks | http://localhost:8888 |
 
 **pgAdmin login:** `admin@admin.com` / `admin`
 
@@ -123,4 +121,3 @@ Then open http://localhost:8000
 | Validation | Pydantic |
 | Containers | Docker Compose |
 | Docs | MkDocs Material |
-| Data Science | Jupyter + pandas |
