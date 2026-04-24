@@ -15,8 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from Database import get_db
-from schemas.campaigns import (
+from database import get_db
+from schema import (
     CampaignOut,
     CampaignUpdate,
     GlobalParamOut,
@@ -128,8 +128,7 @@ def get_campaign(campaign_id: str, db: Session = Depends(get_db)):
 def update_campaign(
     campaign_id: str, payload: CampaignUpdate, db: Session = Depends(get_db)
 ):
-    """Update a campaign's channel and/or trigger (Campaign Editor
-    dropdowns)."""
+    """Update a campaign's channel and/or trigger."""
     sets = []
     params: dict = {"cid": campaign_id}
     if payload.channel is not None:
@@ -154,12 +153,7 @@ def update_campaign(
 def update_message(
     campaign_id: str, payload: MessageUpdate, db: Session = Depends(get_db)
 ):
-    """Update the active message body — this is what happens when the PM
-    edits the textarea in the Campaign Editor.
-
-    Sets source to 'user_edited' and updates the body.
-    """
-    # Find the active message for this campaign
+    """Update the active message body — PM editing the textarea."""
     msg = db.execute(
         text("""
             SELECT message_id FROM message_templates
@@ -185,10 +179,7 @@ def update_message(
 
 @router.post("/campaigns/{campaign_id}/launch", response_model=CampaignOut)
 def launch_campaign(campaign_id: str, db: Session = Depends(get_db)):
-    """Set campaign status to 'running' and record launched_at.
-
-    This is the 'Launch A/B test' button in the prototype.
-    """
+    """Set campaign status to 'running' — the Launch A/B test button."""
     db.execute(
         text("""
             UPDATE campaigns
@@ -203,7 +194,7 @@ def launch_campaign(campaign_id: str, db: Session = Depends(get_db)):
 
 @router.delete("/campaigns/{campaign_id}/reset", response_model=CampaignOut)
 def reset_campaign(campaign_id: str, db: Session = Depends(get_db)):
-    """Reset campaign back to 'draft' — the Reset button in the prototype."""
+    """Reset campaign back to 'draft'."""
     db.execute(
         text("""
             UPDATE campaigns
@@ -220,8 +211,7 @@ def reset_campaign(campaign_id: str, db: Session = Depends(get_db)):
 
 @router.get("/global-params", response_model=list[GlobalParamOut])
 def list_global_params(db: Session = Depends(get_db)):
-    """All shared Campaign Editor params: pro_price_amd, dormant_discount,
-    template_count."""
+    """All shared Campaign Editor params."""
     try:
         rows = db.execute(
             text("SELECT key, value, description FROM global_params ORDER BY key")
@@ -235,8 +225,7 @@ def list_global_params(db: Session = Depends(get_db)):
 def update_global_param(
     key: str, payload: GlobalParamUpdate, db: Session = Depends(get_db)
 ):
-    """Update one global param — e.g. changing the Pro price from 2900 to
-    3500."""
+    """Update one global param value."""
     result = db.execute(
         text("""
             UPDATE global_params SET value = :val, updated_at = now()

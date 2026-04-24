@@ -9,8 +9,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from Database import get_db
-from schemas.ab_tests import ABTestSummary, SegmentABComparison
+from database import get_db
+from schema import ABTestSummary, SegmentABComparison
 
 router = APIRouter(prefix="/api/ab-tests", tags=["ab-tests"])
 

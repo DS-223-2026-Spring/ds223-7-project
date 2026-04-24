@@ -8,7 +8,7 @@ DB connection: postgresql://pulse_user:pulse_pass@db:5432/pulse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import segments, ab_tests, kpis, campaigns, demo
+from routes import segments, ab_tests, kpis, campaigns, demo
 
 app = FastAPI(
     title="Pulse API",
@@ -17,8 +17,6 @@ app = FastAPI(
 )
 
 # --- CORS -----------------------------------------------------------
-# The Streamlit frontend runs on port 8501 inside Docker.
-# Allow all origins during development; tighten in production.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
