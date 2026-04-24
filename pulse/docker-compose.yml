@@ -2,7 +2,7 @@
 # ──────────────────────────────────────────────────────
 # Setup (first time):
 #   1. Make sure .env exists at the repo root with credentials filled in
-#   2. cd myapp && docker-compose up --build
+#   2. cd pulse && docker-compose up --build
 #
 # Services and ports:
 #   db       → localhost:5433  (PostgreSQL)

@@ -2,7 +2,7 @@
 
 > DS-223 Marketing Analytics · Group 7 · American University of Armenia · Spring 2026
 
-Pulse is a microservice application that helps Armat (an Armenian writing SaaS) convert free-tier users to paid Pro subscribers with sent "Upgrade" messages. It segments users by behaviour, lets the PM team launch targeted campaigns, run A/B tests, and track conversion KPIs in real time.
+Pulse is a microservice application that helps Armat (an Armenian writing SaaS) convert free-tier users to paid Pro subscribers. It segments users by behaviour, lets the PM team launch targeted campaigns, run A/B tests, and track conversion KPIs in real time.
 
 ---
 
