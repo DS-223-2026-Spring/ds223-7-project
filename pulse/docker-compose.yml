@@ -10,7 +10,6 @@
 #   back     → localhost:8008  (FastAPI — Swagger at /docs)
 #   front    → localhost:8501  (Streamlit dashboard)
 #   etl      → runs once, seeds the DB, then exits
-#   ds       → localhost:8888  (Jupyter notebooks)
 # ──────────────────────────────────────────────────────
 
 services:
@@ -81,25 +80,6 @@ services:
       DB_NAME:      ${DB_NAME}
       DB_USER:      ${DB_USER}
       DB_PASSWORD:  ${DB_PASSWORD}
-    depends_on:
-      db:
-        condition: service_healthy
-
-  ds:
-    build: ./ds
-    container_name: ds
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
-      DB_HOST:      db
-      DB_PORT:      5432
-      DB_NAME:      ${DB_NAME}
-      DB_USER:      ${DB_USER}
-      DB_PASSWORD:  ${DB_PASSWORD}
-    ports:
-      - "8888:8888"
-    volumes:
-      - ./ds:/app
     depends_on:
       db:
         condition: service_healthy
