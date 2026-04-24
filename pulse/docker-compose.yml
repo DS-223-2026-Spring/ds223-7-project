@@ -1,15 +1,16 @@
 # Pulse — Docker Compose
 # ──────────────────────────────────────────────────────
-# Run from the repo root:
+# Run from inside the pulse/ folder:
+#   cd pulse
 #   docker-compose up --build
 #
 # Services and ports:
 #   db       → localhost:5433  (PostgreSQL)
-#   pgadmin  → localhost:5050  (DB admin UI, login: admin@admin.com / admin)
-#   back     → localhost:8008  (FastAPI — Swagger UI at /docs)
+#   pgadmin  → localhost:5050  (DB admin UI — admin@admin.com / admin)
+#   back     → localhost:8008  (FastAPI — Swagger at /docs)
 #   front    → localhost:8501  (Streamlit dashboard)
-#   etl      → runs once, seeds the database, then exits
-#   ds       → localhost:8888  (Data Science / Jupyter)
+#   etl      → runs once, seeds the DB, then exits
+#   ds       → localhost:8888  (Jupyter notebooks)
 # ──────────────────────────────────────────────────────
 
 services:
@@ -26,7 +27,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./pulse/etl/init:/docker-entrypoint-initdb.d
+      - ./etl/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
@@ -47,7 +48,7 @@ services:
         condition: service_healthy
 
   back:
-    build: ./pulse/api
+    build: ./api
     container_name: back
     restart: unless-stopped
     environment:
@@ -59,7 +60,7 @@ services:
         condition: service_healthy
 
   front:
-    build: ./pulse/app
+    build: ./app
     container_name: front
     restart: unless-stopped
     environment:
@@ -70,7 +71,7 @@ services:
       - back
 
   etl:
-    build: ./pulse/etl
+    build: ./etl
     container_name: etl
     restart: "no"
     environment:
@@ -85,7 +86,7 @@ services:
         condition: service_healthy
 
   ds:
-    build: ./pulse/ds
+    build: ./ds
     container_name: ds
     restart: unless-stopped
     environment:
@@ -98,7 +99,7 @@ services:
     ports:
       - "8888:8888"
     volumes:
-      - ./pulse/ds:/app
+      - ./ds:/app
     depends_on:
       db:
         condition: service_healthy
