@@ -9,7 +9,7 @@ load_dotenv()
 
 DB_CONFIG = {
     "host":     os.getenv("DB_HOST",     "localhost"),
-    "port":     int(os.getenv("DB_PORT", "5433")),
+    "port":     int(os.getenv("DB_PORT", "5432")),
     "dbname":   os.getenv("DB_NAME",     "pulse"),
     "user":     os.getenv("DB_USER",     "pulse_user"),
     "password": os.getenv("DB_PASSWORD", "pulse_pass"),
@@ -26,7 +26,9 @@ TABLE_MAP = {
     "conversion_outcomes.csv": "conversion_outcomes",
 }
 
-def load_csv(conn, csv_path: Path, table: str) -> int:
+
+def load_csv(conn, csv_path, table):
+    """Load rows from a CSV file into a database table."""
     with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
@@ -49,7 +51,9 @@ def load_csv(conn, csv_path: Path, table: str) -> int:
     conn.commit()
     return len(rows)
 
+
 def validate_row_counts(conn):
+    """Print row counts for all seeded tables."""
     print("\n--- Row Count Validation ---")
     tables = list(TABLE_MAP.values()) + [
         "segments", "campaigns", "message_templates", "global_params"
@@ -60,6 +64,7 @@ def validate_row_counts(conn):
             count = cur.fetchone()[0]
             icon = "✅" if count > 0 else "⚠️ "
             print(f"  {icon}  {table}: {count} rows")
+
 
 if __name__ == "__main__":
     try:
