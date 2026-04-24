@@ -1,6 +1,7 @@
 site_name: Pulse — Free-to-Paid Conversion Platform
 site_description: DS-223 Marketing Analytics · Group 7 · Spring 2026
 repo_url: https://github.com/DS-223-2026-Spring/ds223-7-project
+docs_dir: docs/pages
 
 theme:
   name: material
