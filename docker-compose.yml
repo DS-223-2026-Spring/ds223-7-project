@@ -1,7 +1,6 @@
 # Pulse — Docker Compose
 # ──────────────────────────────────────────────────────
-# Run from inside the pulse/ folder:
-#   cd pulse
+# Run from the repo root:
 #   docker-compose up --build
 #
 # Services and ports:
@@ -26,7 +25,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./etl/init:/docker-entrypoint-initdb.d
+      - ./pulse/etl/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
@@ -41,8 +40,8 @@ services:
       PGADMIN_DEFAULT_EMAIL:    ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     volumes:
-      - ./pgadmin/servers.json:/pgadmin4/servers.json
-      - ./pgadmin/pgpass:/pgpass
+      - ./pulse/pgadmin/servers.json:/pgadmin4/servers.json
+      - ./pulse/pgadmin/pgpass:/pgpass
     ports:
       - "5050:80"
     depends_on:
@@ -50,7 +49,7 @@ services:
         condition: service_healthy
 
   back:
-    build: ./api
+    build: ./pulse/api
     container_name: back
     restart: unless-stopped
     environment:
@@ -62,7 +61,7 @@ services:
         condition: service_healthy
 
   front:
-    build: ./app
+    build: ./pulse/app
     container_name: front
     restart: unless-stopped
     ports:
@@ -71,7 +70,7 @@ services:
       - back
 
   etl:
-    build: ./etl
+    build: ./pulse/etl
     container_name: etl
     restart: "no"
     environment:

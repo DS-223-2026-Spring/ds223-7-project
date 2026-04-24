@@ -58,17 +58,16 @@ Five Docker containers run together:
 git clone https://github.com/DS-223-2026-Spring/ds223-7-project.git
 cd ds223-7-project
 
-# 2. Credentials are already set in pulse/.env (dev defaults)
-#    Edit pulse/.env if you want custom values
+# 2. Credentials are already set in .env (dev defaults)
+#    Edit .env if you want custom values
 
-# 3. Navigate to the product folder and start all containers
-cd pulse
+# 3. Start all containers
 docker-compose up --build
 ```
 
 | Service | URL |
 |---------|-----|
-| Streamlit dashboard | http://localhost:8501 |
+| Dashboard | http://localhost:8501 |
 | FastAPI Swagger UI | http://localhost:8008/docs |
 | pgAdmin | http://localhost:5050 |
 
