@@ -2,7 +2,6 @@
 Database session factory.
 
 Uses the internal Docker hostname `db` — never `localhost`.
-The URL matches what the master prompt specifies.
 """
 
 import os

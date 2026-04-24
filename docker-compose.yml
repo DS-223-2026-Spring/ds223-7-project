@@ -1,35 +1,39 @@
 services:
 
   db:
-    build: ./myapp/etl
-    container_name: pulse_db
+    image: postgres:16-alpine
+    container_name: db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: pulse
-      POSTGRES_USER: pulse_user
-      POSTGRES_PASSWORD: pulse_pass
+      POSTGRES_DB:       ${DB_NAME}
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - '5433:5432'
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./myapp/etl/init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U pulse_user -d pulse']
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   etl:
     build: ./myapp/etl
-    container_name: pulse_etl
+    container_name: etl
+    restart: "no"
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: pulse
-      DB_USER: pulse_user
-      DB_PASSWORD: pulse_pass
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      DB_HOST:     db
+      DB_PORT:     5432
+      DB_NAME:     ${DB_NAME}
+      DB_USER:     ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   postgres_data:
+
