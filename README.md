@@ -30,21 +30,23 @@ Pulse is a microservice application that helps Armat (an Armenian writing SaaS) 
 ## Architecture
 
 ```
-myapp/
-├── api/        FastAPI backend  →  localhost:8008
-├── app/        Streamlit dashboard  →  localhost:8501
+pulse/
+├── api/        FastAPI backend         →  localhost:8008
+├── app/        Streamlit dashboard     →  localhost:8501
+├── ds/         Jupyter notebooks       →  localhost:8888
 └── etl/        One-time DB seed pipeline
 ```
 
-Five Docker containers run together:
+Six Docker containers run together:
 
 | Container | Description | Port |
 |-----------|-------------|------|
-| `pulse_db` | PostgreSQL 16 database | 5433 |
-| `pulse_pgadmin` | pgAdmin UI | 5050 |
-| `pulse_api` | FastAPI REST backend | 8008 |
-| `pulse_app` | Streamlit frontend | 8501 |
-| `pulse_etl` | ETL seed runner (exits after run) | — |
+| `db` | PostgreSQL 16 database | 5433 |
+| `pgadmin` | pgAdmin UI | 5050 |
+| `back` | FastAPI REST backend | 8008 |
+| `front` | Streamlit dashboard | 8501 |
+| `ds` | Jupyter data science notebooks | 8888 |
+| `etl` | ETL seed runner (exits after run) | — |
 
 ---
 
@@ -57,11 +59,11 @@ Five Docker containers run together:
 git clone https://github.com/DS-223-2026-Spring/ds223-7-project.git
 cd ds223-7-project
 
-# 2. Credentials are already set in .env (dev defaults)
-#    Edit .env if you want custom values
+# 2. Credentials are already set in pulse/.env (dev defaults)
+#    Edit pulse/.env if you want custom values
 
 # 3. Build and start all containers
-cd myapp
+cd pulse
 docker-compose up --build
 ```
 
@@ -70,6 +72,7 @@ docker-compose up --build
 | Streamlit dashboard | http://localhost:8501 |
 | FastAPI Swagger UI | http://localhost:8008/docs |
 | pgAdmin | http://localhost:5050 |
+| Jupyter notebooks | http://localhost:8888 |
 
 **pgAdmin login:** `admin@admin.com` / `admin`
 
@@ -120,3 +123,4 @@ Then open http://localhost:8000
 | Validation | Pydantic |
 | Containers | Docker Compose |
 | Docs | MkDocs Material |
+| Data Science | Jupyter + pandas |

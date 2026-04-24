@@ -10,21 +10,26 @@
 - [x] Flowchart and product roadmap diagram
 - [x] Team roles defined: PM, Backend, Frontend, DB, Data Scientist
 
-## Milestone 2 — Infrastructure
+## Milestone 2 — Infrastructure (in progress)
 
-- [x] PostgreSQL database with schema (`01_schema.sql`)
-- [x] FastAPI backend with endpoints for all 5 screens
-- [x] Docker Compose stack (db, pgadmin, api, app, etl)
-- [x] Project folder structure (`myapp/api`, `myapp/app`, `myapp/etl`)
-- [ ] Streamlit frontend pages wired to live API
-- [ ] ETL pipeline populating seed data
+- [x] PostgreSQL 16 database with full schema (`pulse/etl/init/01_schema.sql`) — 15 tables, views, triggers
+- [x] FastAPI backend with 13 endpoints across 5 routes (`pulse/api/routes/`)
+- [x] Docker Compose stack — 6 containers: db, pgadmin, back, front, ds, etl
+- [x] Correct project folder structure (`pulse/api`, `pulse/app`, `pulse/ds`, `pulse/etl`)
+- [x] SQLAlchemy ORM models for all 15 tables (`pulse/api/models.py`)
+- [x] Pydantic schemas merged into single `pulse/api/schema.py`
+- [x] All Dockerfiles use `python:3.13-slim`
+- [x] Streamlit frontend scaffolding with navigation, layout, and component stubs (`pulse/app/`)
+- [ ] Streamlit pages fully wired to live API data
+- [ ] ETL seed pipeline producing complete dataset
 
 ## Milestone 3 — Analytics & A/B Testing
 
 - [ ] A/B test runner — variant assignment and result tracking
-- [ ] Statistical significance calculation for test results
+- [ ] Statistical significance calculation (chi-square) for test results
 - [ ] KPI dashboard connected to real data
 - [ ] Campaign launch and reset workflow
+- [ ] Data Science analysis in `pulse/ds/experiments.ipynb`
 
 ## Milestone 4 — Production Readiness
 
