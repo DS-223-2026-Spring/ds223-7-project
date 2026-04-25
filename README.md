@@ -30,11 +30,15 @@ Pulse is a microservice application that helps Armat (an Armenian writing SaaS) 
 ## Architecture
 
 ```
-pulse/
-├── api/        FastAPI backend         →  localhost:8008
-├── app/        Streamlit dashboard     →  localhost:8501
-├── ds/         Data science notebooks
-└── etl/        One-time DB seed pipeline
+ds223-7-project/
+├── docker-compose.yml
+├── .env
+└── pulse/
+    ├── api/        FastAPI backend          →  localhost:8008
+    ├── app/        Streamlit dashboard      →  localhost:8501
+    ├── ds/         Data science models
+    ├── etl/        DB seed pipeline (exits after run)
+    └── pgadmin/    pgAdmin auto-configuration
 ```
 
 Five Docker containers run together:
@@ -45,7 +49,7 @@ Five Docker containers run together:
 | `pgadmin` | pgAdmin UI | 5050 |
 | `back` | FastAPI REST backend | 8008 |
 | `front` | Streamlit dashboard | 8501 |
-| `etl` | ETL seed runner (exits after run) | — |
+| `etl` | Seeds the database, then exits | — |
 
 ---
 
@@ -58,20 +62,33 @@ Five Docker containers run together:
 git clone https://github.com/DS-223-2026-Spring/ds223-7-project.git
 cd ds223-7-project
 
-# 2. Credentials are already set in .env (dev defaults)
-#    Edit .env if you want custom values
+# 2. Credentials are already set in .env (dev defaults — no changes needed)
 
-# 3. Start all containers
+# 3. Build and start all containers
 docker-compose up --build
 ```
 
 | Service | URL |
 |---------|-----|
-| Dashboard | http://localhost:8501 |
+| Streamlit dashboard | http://localhost:8501 |
 | FastAPI Swagger UI | http://localhost:8008/docs |
 | pgAdmin | http://localhost:5050 |
 
 **pgAdmin login:** `admin@admin.com` / `admin`
+
+The ETL container runs automatically on first start, creates all 15 tables, and seeds 442 users with full behavioral data across all 4 segments.
+
+---
+
+## Dashboard Pages
+
+| Page | Description |
+|------|-------------|
+| Segments | User counts per segment, behavioral averages, breakdown table |
+| A/B Tests | Control vs treatment stats, lift, p-value per segment |
+| KPIs | Conversion rate, retention, engagement, results summary |
+| User Demo | Simulate upgrade messages and record user responses live |
+| Campaign Editor | Edit messages, set channels and triggers, launch A/B tests |
 
 ---
 
@@ -79,10 +96,10 @@ docker-compose up --build
 
 | Segment | Users | Strategy |
 |---------|-------|----------|
-| Power writers | 1,240 | Upsell — hit export limits regularly |
-| Growing writers | 1,580 | Nurture — rising usage |
-| Casual writers | 980 | Re-engage — template library hook |
-| Dormant writers | 620 | Win-back — discount + urgency |
+| Power | 124 | Upsell — hit export limits regularly |
+| Growing | 158 | Nurture — rising usage |
+| Casual | 98 | Re-engage — template library hook |
+| Dormant | 62 | Win-back — discount + urgency |
 
 ---
 
@@ -96,16 +113,23 @@ docker-compose up --build
 
 ---
 
-## Documentation
+## API Endpoints
 
-Full docs available via MkDocs:
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/segments/counts` | User count per segment |
+| GET | `/api/segments/behavioral-averages` | Avg exports, paywall hits, sessions |
+| GET | `/api/ab-tests/summary` | A/B test results per segment |
+| GET | `/api/kpis` | Platform-level conversion metrics |
+| GET | `/api/campaigns` | All campaigns with active messages |
+| GET | `/api/global-params` | Shared campaign parameters |
+| PUT | `/api/campaigns/{id}/message` | Update campaign message |
+| PUT | `/api/global-params/{key}` | Update a global parameter |
+| POST | `/api/campaigns/{id}/launch` | Launch a campaign |
+| DELETE | `/api/campaigns/{id}/reset` | Reset campaign to draft |
+| POST | `/api/demo/respond` | Record a demo user response |
 
-```bash
-pip install -r requirements-docs.txt
-mkdocs serve
-```
-
-Then open http://localhost:8000
+Full interactive docs at **http://localhost:8008/docs**
 
 ---
 
@@ -118,5 +142,6 @@ Then open http://localhost:8000
 | Database | PostgreSQL 16 |
 | ORM | SQLAlchemy |
 | Validation | Pydantic |
+| ETL | Python + psycopg2 |
 | Containers | Docker Compose |
 | Docs | MkDocs Material |
