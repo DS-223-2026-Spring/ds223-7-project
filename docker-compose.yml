@@ -64,6 +64,8 @@ services:
     build: ./pulse/app
     container_name: front
     restart: unless-stopped
+    environment:
+      API_URL: http://back:8000
     ports:
       - "8501:8501"
     depends_on:
