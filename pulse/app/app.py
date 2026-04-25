@@ -15,6 +15,39 @@ st.markdown("""
 
 html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
+/* ── Force all text dark globally ── */
+p, span, div, li,
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] span,
+[data-testid="stText"],
+[data-testid="stCaption"] p,
+[data-testid="stCaption"],
+.stCaption,
+.stSelectbox label,
+.stTextArea label,
+.stNumberInput label,
+.stRadio label,
+.stRadio div,
+.stCheckbox label,
+.stSelectbox div[data-baseweb="select"] span,
+[data-baseweb="select"] span,
+[data-testid="stWidgetLabel"],
+[data-testid="stWidgetLabel"] p,
+[data-testid="stWidgetLabel"] label {
+    color: #1f2937 !important;
+}
+
+/* Sidebar nav items */
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div {
+    color: #1f2937 !important;
+}
+
+/* Warning / info / success boxes keep their colours */
+[data-testid="stAlert"] p { color: inherit !important; }
+
 [data-testid="stAppViewContainer"] { background: #f0f2f5; }
 [data-testid="stSidebar"] {
     background: #ffffff !important;
@@ -412,7 +445,7 @@ elif page == "A/B Tests":
                     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px">
                         <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#111">{t.get('control_n',0)}</div><div style="font-size:10px;color:#4b5563">Control users</div></div>
                         <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#111">{t.get('treatment_n',0)}</div><div style="font-size:10px;color:#4b5563">Treatment users</div></div>
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#6b7280">{f"{ctrl_rate*100:.1f}%" if ctrl_rate else "—"}</div><div style="font-size:10px;color:#4b5563">Control conv.</div></div>
+                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#374151">{f"{ctrl_rate*100:.1f}%" if ctrl_rate else "—"}</div><div style="font-size:10px;color:#4b5563">Control conv.</div></div>
                         <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:{color}">{f"{treat_rate*100:.1f}%" if treat_rate else "—"}</div><div style="font-size:10px;color:#4b5563">Treatment conv.</div></div>
                         <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:{color}">{f"+{lift:.0f}%" if lift else "—"}</div><div style="font-size:10px;color:#4b5563">Lift</div></div>
                     </div>
