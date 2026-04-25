@@ -133,6 +133,19 @@ Full interactive docs at **http://localhost:8008/docs**
 
 ---
 
+## Documentation
+
+Full project documentation is available via MkDocs:
+
+```bash
+pip install -r requirements-docs.txt
+mkdocs serve
+```
+
+Then open **http://localhost:8000**
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -144,4 +157,4 @@ Full interactive docs at **http://localhost:8008/docs**
 | Validation | Pydantic |
 | ETL | Python + psycopg2 |
 | Containers | Docker Compose |
-| Docs | MkDocs Material |
+| Documentation | MkDocs Material |
