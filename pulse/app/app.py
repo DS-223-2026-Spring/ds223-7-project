@@ -36,7 +36,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 }
 .pulse-subtitle {
     font-size: 12px;
-    color: #9ca3af;
+    color: #6b7280;
     margin-bottom: 20px;
 }
 
@@ -57,7 +57,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .kpi-card-label {
     font-size: 10px;
     font-weight: 500;
-    color: #9ca3af;
+    color: #6b7280;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     margin-bottom: 8px;
@@ -82,7 +82,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .panel-title {
     font-size: 11px;
     font-weight: 600;
-    color: #374151;
+    color: #1f2937;
     text-transform: uppercase;
     letter-spacing: 0.6px;
     margin-bottom: 14px;
@@ -100,11 +100,11 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
     text-transform: uppercase;
 }
 .badge-running  { background: #dcfce7; color: #15803d; }
-.badge-draft    { background: #f3f4f6; color: #6b7280; }
-.badge-pending  { background: #fef9c3; color: #b45309; }
+.badge-draft    { background: #e5e7eb; color: #374151; }
+.badge-pending  { background: #fef3c7; color: #92400e; }
 .badge-sig      { background: #dcfce7; color: #15803d; }
-.badge-border   { background: #fef9c3; color: #b45309; }
-.badge-insig    { background: #f3f4f6; color: #6b7280; }
+.badge-border   { background: #fef3c7; color: #92400e; }
+.badge-insig    { background: #e5e7eb; color: #374151; }
 
 /* Segment tag */
 .seg-tag {
@@ -131,7 +131,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 [data-testid="stMetric"] label {
     font-size: 10px !important;
     font-weight: 500 !important;
-    color: #9ca3af !important;
+    color: #4b5563 !important;
     text-transform: uppercase;
     letter-spacing: 0.6px;
 }
@@ -155,7 +155,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
     font-weight: 500;
     letter-spacing: 1.2px;
     text-transform: uppercase;
-    color: #9ca3af;
+    color: #6b7280;
     margin: 12px 0 4px;
 }
 
@@ -168,7 +168,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .pulse-table th {
     font-size: 9px;
     font-weight: 600;
-    color: #9ca3af;
+    color: #4b5563;
     text-transform: uppercase;
     letter-spacing: 0.6px;
     padding: 8px 12px;
@@ -178,7 +178,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .pulse-table td {
     padding: 10px 12px;
     border-bottom: 1px solid rgba(0,0,0,0.05);
-    color: #374151;
+    color: #1f2937;
     font-size: 12px;
 }
 .pulse-table tr:last-child td { border-bottom: none; }
@@ -283,7 +283,7 @@ with st.sidebar:
     )
     st.markdown("---")
     st.markdown(
-        '<div style="font-size:11px;color:#9ca3af">Project Manager · Admin</div>',
+        '<div style="font-size:11px;color:#4b5563">Project Manager · Admin</div>',
         unsafe_allow_html=True,
     )
 
@@ -310,7 +310,7 @@ if page == "Segments":
                 <div class="kpi-card">
                     <div class="kpi-card-label">{label}</div>
                     <div class="kpi-card-value" style="color:{color}">{count:,}</div>
-                    <div style="font-size:11px;color:#9ca3af">users</div>
+                    <div style="font-size:11px;color:#4b5563">users</div>
                 </div>
             """, unsafe_allow_html=True)
 
@@ -398,8 +398,8 @@ elif page == "A/B Tests":
             footer_html = (
                 f'<span style="font-size:11px;color:#6b7280">p-value: <strong style="color:#111">{pval:.4f}</strong></span>'
                 f'&nbsp;&nbsp;<span class="badge {sig_badge}">{sig_label}</span>'
-                f'&nbsp;&nbsp;<span style="font-size:11px;color:#9ca3af">14-day window</span>'
-            ) if pval else '<span style="font-size:11px;color:#9ca3af;font-style:italic">Test not yet launched for this segment</span>'
+                f'&nbsp;&nbsp;<span style="font-size:11px;color:#4b5563">14-day window</span>'
+            ) if pval else '<span style="font-size:11px;color:#4b5563;font-style:italic">Test not yet launched for this segment</span>'
 
             st.markdown(f"""
                 <div class="panel">
@@ -410,11 +410,11 @@ elif page == "A/B Tests":
                         </div>
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px">
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#111">{t.get('control_n',0)}</div><div style="font-size:10px;color:#9ca3af">Control users</div></div>
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#111">{t.get('treatment_n',0)}</div><div style="font-size:10px;color:#9ca3af">Treatment users</div></div>
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#6b7280">{f"{ctrl_rate*100:.1f}%" if ctrl_rate else "—"}</div><div style="font-size:10px;color:#9ca3af">Control conv.</div></div>
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:{color}">{f"{treat_rate*100:.1f}%" if treat_rate else "—"}</div><div style="font-size:10px;color:#9ca3af">Treatment conv.</div></div>
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:{color}">{f"+{lift:.0f}%" if lift else "—"}</div><div style="font-size:10px;color:#9ca3af">Lift</div></div>
+                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#111">{t.get('control_n',0)}</div><div style="font-size:10px;color:#4b5563">Control users</div></div>
+                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#111">{t.get('treatment_n',0)}</div><div style="font-size:10px;color:#4b5563">Treatment users</div></div>
+                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#6b7280">{f"{ctrl_rate*100:.1f}%" if ctrl_rate else "—"}</div><div style="font-size:10px;color:#4b5563">Control conv.</div></div>
+                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:{color}">{f"{treat_rate*100:.1f}%" if treat_rate else "—"}</div><div style="font-size:10px;color:#4b5563">Treatment conv.</div></div>
+                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:{color}">{f"+{lift:.0f}%" if lift else "—"}</div><div style="font-size:10px;color:#4b5563">Lift</div></div>
                     </div>
                     <div style="padding-top:10px;border-top:1px solid rgba(0,0,0,0.06)">{footer_html}</div>
                 </div>
@@ -589,14 +589,14 @@ elif page == "User Demo":
                 dec_color = "#00b87a" if entry["decision"] == "upgraded" else "#d97706"
                 st.markdown(
                     f'<div class="log-entry">'
-                    f'<span style="color:#9ca3af;margin-right:8px">seg=</span><strong>{entry["seg"]}</strong>'
+                    f'<span style="color:#4b5563;margin-right:8px">seg=</span><strong>{entry["seg"]}</strong>'
                     f'&nbsp;&nbsp;group=<strong>{entry["group"]}</strong>'
                     f'&nbsp;&nbsp;decision=<span style="color:{dec_color};font-weight:600">{entry["decision"]}</span>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
         else:
-            st.markdown('<div style="font-size:12px;color:#9ca3af;padding:20px 0">No responses yet. Simulate a user response on the left.</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:12px;color:#4b5563;padding:20px 0">No responses yet. Simulate a user response on the left.</div>', unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -665,7 +665,7 @@ elif page == "Campaign Editor":
                             <span class="seg-tag seg-{seg}">{label}</span>
                             <span class="badge {badge}">{status}</span>
                         </div>
-                        <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">
+                        <div style="font-size:11px;color:#4b5563;margin-bottom:10px">
                             {channel} &nbsp;·&nbsp; {trigger}
                         </div>
                     """, unsafe_allow_html=True)
