@@ -31,6 +31,8 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v4
+        with:
+          enablement: true
 
       - name: Build MkDocs site
         run: mkdocs build --strict
