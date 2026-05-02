@@ -8,8 +8,6 @@
 
 ## What Pulse Does
 
-Pulse gives the Armat PM team everything they need to run data-driven upgrade campaigns:
-
 1. **Segments** free users into four behavioral groups based on session activity, export frequency, and paywall interactions
 2. **Targets** each segment with a tailored in-app upgrade message crafted in the Campaign Editor
 3. **Tests** two message variants head-to-head in a 14-day A/B window and measures conversion lift
@@ -22,15 +20,15 @@ Pulse gives the Armat PM team everything they need to run data-driven upgrade ca
 | `db` | PostgreSQL 16 | 5433 | Primary database — 15 tables, 6 views |
 | `back` | FastAPI + SQLAlchemy | 8008 | REST API — 13 endpoints |
 | `front` | Streamlit | 8501 | PM dashboard — 5 screens |
-| `etl` | Python | — | One-time data seed (exits after run) |
 | `ds` | Jupyter | 8888 | Data science notebooks |
+| `etl` | Python | — | One-time data seed (exits after run) |
 | `pgadmin` | pgAdmin 4 | 5050 | Database admin UI |
 
 ## Quick Start
 
 ```bash
 git clone https://github.com/DS-223-2026-Spring/ds223-7-project.git
-cd ds223-7-project/pulse
+cd ds223-7-project
 docker-compose up --build
 ```
 
@@ -42,13 +40,13 @@ Then open:
 
 ## Documentation Sections
 
-- [Problem & Solution](overview/problem.md) — business context and why Pulse exists
-- [Architecture](overview/architecture.md) — system design and container overview
-- [Roadmap](overview/roadmap.md) — milestone plan and delivery status
-- [KPIs](overview/kpis.md) — platform metrics and conversion funnel
-- [Database](database/index.md) — schema, tables, and views
-- [ETL Pipeline](etl/index.md) — data seeding and initialization
-- [Model Engine](model/index.md) — segmentation logic and A/B statistics
-- [API](api/index.md) — endpoint reference
-- [Dashboard](dashboard/index.md) — Streamlit screens and components
-- [About](about/team.md) — team members and course info
+- [Problem & Solution](problem.md) — business context and why Pulse exists
+- [Architecture](architecture.md) — system design and container overview
+- [Database](database.md) — schema, tables, and views
+- [ETL Pipeline](etl.md) — data seeding and initialization
+- [Model Engine](model.md) — segmentation logic and A/B statistics
+- [API](api.md) — endpoint reference
+- [Dashboard](dashboard.md) — Streamlit screens and components
+- [Roadmap](roadmap.md) — milestone plan and delivery status
+- [KPIs](kpis.md) — platform metrics and conversion funnel
+- [Team](team.md) — team members and course info

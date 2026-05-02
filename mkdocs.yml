@@ -41,14 +41,13 @@ plugins:
 
 nav:
   - Home: index.md
-  - Overview:
-      - Problem & Solution: overview/problem.md
-      - Architecture: overview/architecture.md
-      - Roadmap: overview/roadmap.md
-      - KPIs: overview/kpis.md
-  - Database: database/index.md
-  - ETL Pipeline: etl/index.md
-  - Model Engine: model/index.md
-  - API: api/index.md
-  - Dashboard: dashboard/index.md
-  - About: about/team.md
+  - Problem & Solution: problem.md
+  - Architecture: architecture.md
+  - Database: database.md
+  - ETL Pipeline: etl.md
+  - Model Engine: model.md
+  - API: api.md
+  - Dashboard: dashboard.md
+  - Roadmap: roadmap.md
+  - KPIs: kpis.md
+  - Team: team.md
