@@ -7,50 +7,37 @@ docs_dir: docs/pages
 
 theme:
   name: material
-  palette:
-    - scheme: default
-      primary: indigo
-      accent: blue
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
-      accent: blue
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
   features:
     - navigation.tabs
-    - navigation.tabs.sticky
     - navigation.sections
-    - navigation.expand
+    - toc.integrate
     - navigation.top
-    - search.highlight
     - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
     - content.code.copy
-    - content.code.annotate
-  icon:
-    repo: fontawesome/brands/github
+  language: en
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+      primary: teal
+      accent: purple
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+      primary: teal
+      accent: lime
 
 plugins:
   - search
-
-markdown_extensions:
-  - admonition
-  - pymdownx.details
-  - pymdownx.superfences
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.tabbed:
-      alternate_style: true
-  - tables
-  - attr_list
-  - md_in_html
-  - toc:
-      permalink: true
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["."]
 
 nav:
   - Home: index.md
