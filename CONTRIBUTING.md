@@ -2,7 +2,7 @@
 
 ## Branch Strategy
 
-Each team member worked on a dedicated branch named after their role:
+Each team member works on a dedicated branch named after their role:
 
 | Branch | Owner | Scope |
 |--------|-------|-------|
@@ -12,13 +12,13 @@ Each team member worked on a dedicated branch named after their role:
 | `db` | Narek Dilbaryan | PostgreSQL schema, ETL pipeline, seed data |
 | `ds` | Areg Avagyan | Data science models, EDA notebooks |
 
-No direct commits to `main`. All changes were submitted via Pull Request and reviewed by the PM before merging.
+No direct commits to `main`. All changes must be submitted via Pull Request and reviewed by the PM before merging.
 
 ---
 
 ## Commit Convention
 
-Commits follow the format:
+Commits must follow this format:
 
 ```
 type: short description in present tense
@@ -33,30 +33,39 @@ type: short description in present tense
 | `docs` | README, docstrings, MkDocs content |
 | `chore` | Config, Docker, dependencies |
 
+Examples:
+```
+feat: add A/B test summary endpoint
+fix: correct API URL in Streamlit frontend
+docs: update README quick start section
+```
+
 ---
 
 ## Pull Request Process
 
-1. Work is pushed to the role branch (`back`, `front`, `db`, `ds`)
-2. A PR is opened targeting `main`
-3. PR description lists what was added and how it was tested
-4. PM (Silva) reviews and either requests changes or approves
-5. PM merges — team members do not merge their own PRs
+1. Push work to your role branch (`back`, `front`, `db`, `ds`)
+2. Open a PR targeting `main`
+3. PR title must follow the commit convention above
+4. PR description must list what was added and how it was tested
+5. Tag the PM (Silva) as reviewer
+6. Address any requested changes before re-requesting review
+7. PM reviews and merges — team members do not merge their own PRs
 
 ---
 
 ## Review Expectations
 
-- PM verified each PR ran correctly with `docker-compose up --build`
-- Reviewer checked that endpoints matched the prototype screens
-- Structural or naming issues (wrong paths, wrong Python version) were flagged before merge
-- PRs with conflicts were resolved before merging
+- PM verifies each PR runs correctly with `docker-compose up --build`
+- Reviewer checks that endpoints and pages match the prototype screens
+- Structural issues (wrong paths, wrong Python version, missing files) must be fixed before merge
+- PRs with unresolved conflicts will not be merged
 
 ---
 
 ## Environment
 
-Credentials are in `.env` at the repo root. No secrets or personal keys are committed.
+Credentials are in `.env` at the repo root. Do not commit secrets or personal API keys.
 
 To run the full stack locally:
 
