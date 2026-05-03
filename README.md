@@ -19,11 +19,10 @@ Pulse is a microservice application that helps Armat (an Armenian writing SaaS) 
 
 | Name | Role |
 |------|------|
-| Silva Vardanyan | Product Manager |
+| Silva Vardanyan | Product Manager & Data Scientist |
 | Albert Hakobyan | Backend Developer |
 | Anzhelika Simonyan | Frontend Developer |
 | Narek Dilbaryan | Database Engineer |
-| Areg Avagyan | Data Scientist |
 
 ---
 

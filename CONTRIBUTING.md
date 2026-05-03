@@ -10,7 +10,7 @@ Each team member works on a dedicated branch named after their role:
 | `back` | Albert Hakobyan | FastAPI backend, ORM models, API endpoints |
 | `front` | Anzhelika Simonyan | Streamlit dashboard, UI components |
 | `db` | Narek Dilbaryan | PostgreSQL schema, ETL pipeline, seed data |
-| `ds` | Areg Avagyan | Data science models, EDA notebooks |
+| `ds` | Silva Vardanyan | Data science models, EDA notebooks |
 
 No direct commits to `main`. All changes must be submitted via Pull Request and reviewed by the PM before merging.
 
