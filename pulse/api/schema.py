@@ -152,3 +152,9 @@ class DemoResponse(BaseModel):
     segment_name: str
     decision: str          # 'upgraded' | 'try_later'
     ab_group: str          # 'control' | 'treatment'
+    
+class DemoRespondResult(BaseModel):
+    """Response after recording an upgrade / try-later decision."""
+    status: str
+    decision: str
+    segment: str

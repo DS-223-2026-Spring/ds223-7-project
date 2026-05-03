@@ -10,7 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from database import get_db
-from schema import DemoMessageOut, DemoResponse
+from schema import DemoMessageOut, DemoResponse, DemoRespondResult
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])
 
@@ -68,7 +68,7 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/respond")
+@router.post("/respond", response_model=DemoRespondResult)
 def record_demo_response(payload: DemoResponse, db: Session = Depends(get_db)):
     """Record a user's upgrade / try-later decision from the Demo screen."""
     user = db.execute(
