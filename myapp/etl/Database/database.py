@@ -1,9 +1,20 @@
+"""
+Database utility module for the Pulse platform.
+
+Provides a connection factory and reusable CRUD helpers used by the
+ETL pipeline, backend API, and data science workflows.
+"""
+
 import os
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# ---------------------------------------------------------------------------
+# Connection configuration
+# ---------------------------------------------------------------------------
 
 DB_CONFIG = {
     "host":     os.getenv("DB_HOST",     "db"),
@@ -13,23 +24,31 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD", "pulse_pass"),
 }
 
+
 def get_connection():
     """
-    Create and return a new psycopg2 connection to the database.
+    Create and return a new psycopg2 connection using DB_CONFIG.
 
     Returns:
         psycopg2.connection: An open database connection.
+
+    Raises:
+        psycopg2.OperationalError: If the connection cannot be established.
     """
     return psycopg2.connect(**DB_CONFIG)
 
+
+# ---------------------------------------------------------------------------
+# Generic CRUD helpers
+# ---------------------------------------------------------------------------
 
 def insert(table: str, data: dict) -> None:
     """
     Insert a single row into the specified table.
 
     Parameters:
-        table (str): The name of the table to insert into.
-        data (dict): A dictionary mapping column names to values.
+        table (str): Target table name.
+        data (dict): Column-value pairs to insert.
 
     Returns:
         None
@@ -45,15 +64,14 @@ def insert(table: str, data: dict) -> None:
 
 def select(table: str, filters: dict = None) -> list:
     """
-    Select rows from the specified table with optional filters.
+    Select rows from a table with optional filters.
 
     Parameters:
-        table (str): The name of the table to query.
-        filters (dict, optional): Column-value pairs to filter by (WHERE clause).
-                                  If None or empty, all rows are returned.
+        table (str): Table to query.
+        filters (dict, optional): Column-value pairs for WHERE clause.
 
     Returns:
-        list[dict]: A list of rows as dictionaries.
+        list[dict]: Matching rows as dictionaries.
     """
     query = f"SELECT * FROM {table}"
     values = []
@@ -69,19 +87,19 @@ def select(table: str, filters: dict = None) -> list:
 
 def update(table: str, filters: dict, data: dict) -> None:
     """
-    Update rows in the specified table that match the given filters.
+    Update rows matching the filters with new values.
 
     Parameters:
-        table (str): The name of the table to update.
-        filters (dict): Column-value pairs to identify which rows to update.
-        data (dict): Column-value pairs with the new values to set.
+        table (str): Table to update.
+        filters (dict): WHERE clause column-value pairs.
+        data (dict): New column-value pairs to set.
 
     Returns:
         None
     """
-    set_clause = ", ".join([f"{col} = %s" for col in data])
+    set_clause   = ", ".join([f"{col} = %s" for col in data])
     where_clause = " AND ".join([f"{col} = %s" for col in filters])
-    query = f"UPDATE {table} SET {set_clause} WHERE {where_clause}"
+    query  = f"UPDATE {table} SET {set_clause} WHERE {where_clause}"
     values = list(data.values()) + list(filters.values())
     with get_connection() as conn:
         with conn.cursor() as cur:
@@ -91,11 +109,11 @@ def update(table: str, filters: dict, data: dict) -> None:
 
 def delete(table: str, filters: dict) -> None:
     """
-    Delete rows from the specified table that match the given filters.
+    Delete rows matching the filters.
 
     Parameters:
-        table (str): The name of the table to delete from.
-        filters (dict): Column-value pairs to identify which rows to delete.
+        table (str): Table to delete from.
+        filters (dict): WHERE clause column-value pairs.
 
     Returns:
         None
@@ -107,21 +125,26 @@ def delete(table: str, filters: dict) -> None:
             cur.execute(query, list(filters.values()))
         conn.commit()
 
+
+# ---------------------------------------------------------------------------
+# Business-logic helpers
+# ---------------------------------------------------------------------------
+
 def get_user_by_segment(segment_name: str) -> list:
     """
-    Get all users assigned to a specific segment.
+    Return all active users assigned to a named segment.
 
     Parameters:
-        segment_name (str): The segment name (e.g. 'power', 'growing', 'casual', 'dormant').
+        segment_name (str): One of 'power', 'growing', 'casual', 'dormant'.
 
     Returns:
-        list[dict]: A list of user rows matching the segment.
+        list[dict]: User rows belonging to that segment.
     """
     query = """
         SELECT u.*
         FROM users u
-        JOIN user_segments us ON us.user_id = u.user_id
-        JOIN segments s ON s.segment_id = us.segment_id
+        JOIN user_segments us ON us.user_id    = u.user_id
+        JOIN segments      s  ON s.segment_id  = us.segment_id
         WHERE s.name = %s AND us.expires_at IS NULL
     """
     with get_connection() as conn:
@@ -132,11 +155,11 @@ def get_user_by_segment(segment_name: str) -> list:
 
 def update_user_status(user_id: str, new_status: str) -> None:
     """
-    Update the status of a user by their user_id.
+    Update the account status of a single user.
 
     Parameters:
-        user_id (str): The UUID of the user to update.
-        new_status (str): The new status value ('active', 'inactive', 'banned').
+        user_id (str): UUID of the user.
+        new_status (str): New status — 'active', 'inactive', or 'banned'.
 
     Returns:
         None
@@ -144,45 +167,45 @@ def update_user_status(user_id: str, new_status: str) -> None:
     update("users", filters={"user_id": user_id}, data={"status": new_status})
 
 
-def get_campaign_by_id(campaign_id: str) -> dict:
+def get_campaign_by_id(campaign_id: str) -> dict | None:
     """
-    Get a single campaign row by its campaign_id.
+    Fetch a single campaign row by primary key.
 
     Parameters:
-        campaign_id (str): The UUID of the campaign.
+        campaign_id (str): UUID of the campaign.
 
     Returns:
-        dict: The campaign row, or None if not found.
+        dict: Campaign row, or None if not found.
     """
     results = select("campaigns", filters={"campaign_id": campaign_id})
     return results[0] if results else None
 
 
-def get_active_message_for_campaign(campaign_id: str) -> dict:
+def get_active_message_for_campaign(campaign_id: str) -> dict | None:
     """
-    Get the active message template for a given campaign.
+    Return the active message template for a campaign.
 
     Parameters:
-        campaign_id (str): The UUID of the campaign.
+        campaign_id (str): UUID of the campaign.
 
     Returns:
-        dict: The active message template row, or None if not found.
+        dict: Active message template row, or None if not found.
     """
     results = select("message_templates", filters={
         "campaign_id": campaign_id,
-        "is_active": True
+        "is_active":   True,
     })
     return results[0] if results else None
 
 
 def get_users_by_plan(plan: str) -> list:
     """
-    Get all users on a specific plan.
+    Return all users on a specific subscription plan.
 
     Parameters:
-        plan (str): The plan type ('free', 'pro', 'cancelled').
+        plan (str): Plan type — 'free', 'pro', or 'cancelled'.
 
     Returns:
-        list[dict]: A list of user rows on that plan.
+        list[dict]: User rows on that plan.
     """
     return select("users", filters={"plan": plan})
