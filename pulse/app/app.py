@@ -1,4 +1,4 @@
-"""Pulse Dashboard — Streamlit frontend."""
+"""Pulse Dashboard â Streamlit frontend."""
 import os
 import requests
 import pandas as pd
@@ -8,14 +8,14 @@ API = os.getenv("API_URL", "http://back:8000")
 
 st.set_page_config(page_title="Pulse", page_icon=None, layout="wide")
 
-# ── Global styles ─────────────────────────────────────────────────────────────
+# ââ Global styles âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
 html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
-/* ── Force all text dark globally ── */
+/* ââ Force all text dark globally ââ */
 p, span, div, li,
 [data-testid="stMarkdownContainer"] p,
 [data-testid="stMarkdownContainer"] span,
@@ -260,7 +260,8 @@ hr { border: none; border-top: 1px solid rgba(0,0,0,0.07); margin: 18px 0; }
 """, unsafe_allow_html=True)
 
 
-# ── API helpers ───────────────────────────────────────────────────────────────
+
+# ── API helpers ──────────────────────────────────────────────
 def api_get(path):
     try:
         r = requests.get(f"{API}{path}", timeout=5)
@@ -297,6 +298,91 @@ def api_delete(path):
         st.error(f"Reset failed: {e}")
         return None
 
+
+# ── Reusable UI components ─────────────────────────────────────────────────
+def page_header(title: str, subtitle: str) -> None:
+    """Render the standard page title + subtitle banner."""
+    st.markdown(f'<div class="pulse-title">{title}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="pulse-subtitle">{subtitle}</div>', unsafe_allow_html=True)
+
+
+def panel_header(title: str) -> None:
+    """Open a .panel div with a panel-title label."""
+    st.markdown(
+        f'<div class="panel"><span class="panel-title">{title}</span>',
+        unsafe_allow_html=True,
+    )
+
+
+def panel_close() -> None:
+    """Close the current .panel div."""
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+def kpi_card(col, label: str, value: str, trend: str = "", color: str = "") -> None:
+    """Render a KPI metric card into the given Streamlit column."""
+    color_style = f'style="color:{color}"' if color else ""
+    trend_html = f'<div class="kpi-card-trend">{trend}</div>' if trend else ""
+    col.markdown(
+        f"""
+        <div class="kpi-card">
+            <div class="kpi-card-label">{label}</div>
+            <div class="kpi-card-value" {color_style}>{value}</div>
+            {trend_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def seg_tag(seg: str, label: str) -> str:
+    """Return an HTML segment-color tag span."""
+    return f'<span class="seg-tag seg-{seg}">{label}</span>'
+
+
+def status_badge(status: str) -> tuple:
+    """Return (css_class, display_label) for a campaign or test status string."""
+    s = status.lower()
+    if "not" in s:
+        return ("badge-insig", "Not significant")
+    if "borderline" in s:
+        return ("badge-border", "Borderline")
+    if "significant" in s:
+        return ("badge-sig", "Significant")
+    if s == "running":
+        return ("badge-running", "running")
+    if s == "draft":
+        return ("badge-draft", "draft")
+    return ("badge-pending", status)
+
+
+def render_preview(
+    template: str,
+    price: int,
+    discount: int,
+    tmpl_count: int,
+    export_count: int = 9,
+    paywall_hits: int = 7,
+) -> None:
+    """Substitute template variables and render the message preview box."""
+    preview = (
+        template
+        .replace("{{price}}", str(price))
+        .replace("{{discount}}", str(discount))
+        .replace("{{template_count}}", str(tmpl_count))
+        .replace("{{export_count}}", str(export_count))
+        .replace("{{paywall_hits}}", str(paywall_hits))
+    )
+    st.markdown(f'<div class="prev-box">{preview}</div>', unsafe_allow_html=True)
+
+
+@st.cache_data(ttl=5)
+def get_global_params() -> dict:
+    """Fetch global params once per 5 s and return a dict keyed by param key."""
+    raw = api_get("/api/global-params") or []
+    return {p["key"]: p for p in raw}
+
+
 COLORS = {
     "power":   "#00b87a",
     "growing": "#3b82f6",
@@ -305,7 +391,7 @@ COLORS = {
 }
 
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# ── Sidebar ──────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown('<div class="sidebar-brand">pulse.</div>', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-section">Analytics</div>', unsafe_allow_html=True)
@@ -314,19 +400,13 @@ with st.sidebar:
         ["Segments", "A/B Tests", "KPIs", "User Demo", "Campaign Editor"],
         label_visibility="collapsed",
     )
-    st.markdown("---")
-    st.markdown(
-        '<div style="font-size:11px;color:#4b5563">Project Manager · Admin</div>',
-        unsafe_allow_html=True,
-    )
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────────────────────
 # SEGMENTS
-# ══════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────────────────────
 if page == "Segments":
-    st.markdown('<div class="pulse-title">Segments</div>', unsafe_allow_html=True)
-    st.markdown('<div class="pulse-subtitle">Free-user behavioral clustering — 4 segments</div>', unsafe_allow_html=True)
+    page_header("Segments", "Free-user behavioral clustering — 4 segments")
 
     counts = api_get("/api/segments/counts") or []
     avgs   = api_get("/api/segments/behavioral-averages") or []
@@ -339,13 +419,7 @@ if page == "Segments":
             label = seg.get("label", name.title())
             count = seg.get("user_count", 0)
             color = COLORS.get(name, "#111827")
-            col.markdown(f"""
-                <div class="kpi-card">
-                    <div class="kpi-card-label">{label}</div>
-                    <div class="kpi-card-value" style="color:{color}">{count:,}</div>
-                    <div style="font-size:11px;color:#4b5563">users</div>
-                </div>
-            """, unsafe_allow_html=True)
+            kpi_card(col, label, f"{count:,}", color=color)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -355,18 +429,18 @@ if page == "Segments":
         col1, col2 = st.columns(2)
 
         with col1:
-            st.markdown('<div class="panel"><span class="panel-title">Exports per week</span>', unsafe_allow_html=True)
+            panel_header("Exports per week")
             if "avg_exports" in df.columns:
                 chart_df = df.set_index("segment_name")[["avg_exports"]].rename(columns={"avg_exports": "Avg exports"})
                 st.bar_chart(chart_df, color="#00b87a", height=160)
-            st.markdown('</div>', unsafe_allow_html=True)
+            panel_close()
 
         with col2:
-            st.markdown('<div class="panel"><span class="panel-title">Paywall hits per week</span>', unsafe_allow_html=True)
+            panel_header("Paywall hits per week")
             if "avg_paywall_hits" in df.columns:
                 chart_df = df.set_index("segment_name")[["avg_paywall_hits"]].rename(columns={"avg_paywall_hits": "Avg paywall hits"})
                 st.bar_chart(chart_df, color="#3b82f6", height=160)
-            st.markdown('</div>', unsafe_allow_html=True)
+            panel_close()
 
         # Breakdown table
         count_map = {s["segment_name"]: s.get("user_count", 0) for s in counts}
@@ -375,7 +449,7 @@ if page == "Segments":
             seg_name = row.get("segment_name", "")
             rows_html += f"""
             <tr>
-                <td><span class="seg-tag seg-{seg_name}">{seg_name.title()}</span></td>
+                <td>{seg_tag(seg_name, seg_name.title())}</td>
                 <td>{count_map.get(seg_name, '—'):,}</td>
                 <td>{row.get('avg_sessions_per_week', '—')}</td>
                 <td>{row.get('avg_exports', '—')}</td>
@@ -398,12 +472,11 @@ if page == "Segments":
         """, unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────────────────────
 # A/B TESTS
-# ══════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────────────────────
 elif page == "A/B Tests":
-    st.markdown('<div class="pulse-title">A/B Tests</div>', unsafe_allow_html=True)
-    st.markdown('<div class="pulse-subtitle">One test per segment — control vs treatment message</div>', unsafe_allow_html=True)
+    page_header("A/B Tests", "One test per segment — control vs treatment message")
 
     tests = api_get("/api/ab-tests/summary") or []
 
@@ -415,7 +488,7 @@ elif page == "A/B Tests":
             label  = t.get("segment_label", seg.title())
             status = t.get("status", "pending")
             color  = COLORS.get(seg, "#111")
-            badge  = "badge-running" if status == "running" else "badge-pending"
+            badge, badge_label = status_badge(status)
 
             ctrl_rate  = t.get("control_rate")
             treat_rate = t.get("treatment_rate")
@@ -423,43 +496,40 @@ elif page == "A/B Tests":
             pval       = t.get("p_value")
             sig        = t.get("significance", "")
 
-            if "not" in sig:        sig_badge = "badge-insig";  sig_label = "Not significant"
-            elif "borderline" in sig: sig_badge = "badge-border"; sig_label = "Borderline"
-            elif sig:               sig_badge = "badge-sig";    sig_label = "Significant"
-            else:                   sig_badge = "badge-draft";  sig_label = "Pending"
+            ctrl  = f"{ctrl_rate*100:.1f}%"   if ctrl_rate  else "—"
+            treat = f"{treat_rate*100:.1f}%"  if treat_rate else "—"
+            lift_str = f"+{lift:.0f}%"        if lift       else "—"
+            pval_str = f"{pval:.3f}"          if pval       else "—"
+
+            sig_badge, sig_label = status_badge(sig or "pending")
+            lift_color = "#00b87a" if lift else "#9ca3af"
 
             footer_html = (
-                f'<span style="font-size:11px;color:#6b7280">p-value: <strong style="color:#111">{pval:.4f}</strong></span>'
-                f'&nbsp;&nbsp;<span class="badge {sig_badge}">{sig_label}</span>'
-                f'&nbsp;&nbsp;<span style="font-size:11px;color:#4b5563">14-day window</span>'
-            ) if pval else '<span style="font-size:11px;color:#4b5563;font-style:italic">Test not yet launched for this segment</span>'
+                f'<span class="badge {sig_badge}">{sig_label}</span>'
+                f'&nbsp;&nbsp;p = {pval_str}'
+            )
 
             st.markdown(f"""
                 <div class="panel">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-                        <div style="display:flex;align-items:center;gap:10px">
-                            <span class="seg-tag seg-{seg}">{label}</span>
-                            <span class="badge {badge}">{status}</span>
-                        </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                        {seg_tag(seg, label)}
+                        <span class="badge {badge}">{badge_label}</span>
                     </div>
-                    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px">
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#111">{t.get('control_n',0)}</div><div style="font-size:10px;color:#4b5563">Control users</div></div>
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#111">{t.get('treatment_n',0)}</div><div style="font-size:10px;color:#4b5563">Treatment users</div></div>
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:#374151">{f"{ctrl_rate*100:.1f}%" if ctrl_rate else "—"}</div><div style="font-size:10px;color:#4b5563">Control conv.</div></div>
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:{color}">{f"{treat_rate*100:.1f}%" if treat_rate else "—"}</div><div style="font-size:10px;color:#4b5563">Treatment conv.</div></div>
-                        <div><div style="font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:{color}">{f"+{lift:.0f}%" if lift else "—"}</div><div style="font-size:10px;color:#4b5563">Lift</div></div>
+                    <div style="display:flex;gap:24px;margin-bottom:10px">
+                        <div><div class="kpi-card-label">Control</div><div class="kpi-card-value" style="font-size:20px">{ctrl}</div></div>
+                        <div><div class="kpi-card-label">Treatment</div><div class="kpi-card-value" style="font-size:20px;color:{lift_color}">{treat}</div></div>
+                        <div><div class="kpi-card-label">Lift</div><div class="kpi-card-value" style="font-size:20px;color:{lift_color}">{lift_str}</div></div>
                     </div>
-                    <div style="padding-top:10px;border-top:1px solid rgba(0,0,0,0.06)">{footer_html}</div>
+                    <div style="font-size:11px;color:#6b7280">{footer_html}</div>
                 </div>
             """, unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────────────────────
 # KPIs
-# ══════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────────────────────
 elif page == "KPIs":
-    st.markdown('<div class="pulse-title">KPIs</div>', unsafe_allow_html=True)
-    st.markdown('<div class="pulse-subtitle">Platform-level conversion metrics</div>', unsafe_allow_html=True)
+    page_header("KPIs", "Platform-level conversion metrics")
 
     kpis = api_get("/api/kpis") or {}
     ab   = api_get("/api/ab-tests/summary") or []
@@ -480,17 +550,11 @@ elif page == "KPIs":
 
     cols = st.columns(3)
     for i, (label, value, trend) in enumerate(kpi_items):
-        cols[i % 3].markdown(f"""
-            <div class="kpi-card" style="margin-bottom:12px">
-                <div class="kpi-card-label">{label}</div>
-                <div class="kpi-card-value">{value}</div>
-                <div class="kpi-card-trend">{trend}</div>
-            </div>
-        """, unsafe_allow_html=True)
+        kpi_card(cols[i % 3], label, value, trend=trend)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Results summary
+    # Results summary table
     if ab:
         rows_html = ""
         for t in ab:
@@ -500,16 +564,12 @@ elif page == "KPIs":
             treat  = f"{t['treatment_rate']*100:.1f}%"  if t.get("treatment_rate") else "—"
             lift   = f"+{t['lift_pct']:.0f}%"           if t.get("lift_pct")       else "—"
             sig    = t.get("significance", "")
-            if "not" in sig:       b, bl = "badge-insig",  "Not significant"
-            elif "borderline" in sig: b, bl = "badge-border", "Borderline"
-            elif sig:              b, bl = "badge-sig",   "Significant"
-            else:                  b, bl = "badge-draft",  "Pending"
-
+            b, bl  = status_badge(sig or "pending")
             lift_color = "#00b87a" if t.get("lift_pct") else "#9ca3af"
             rows_html += f"""<tr>
-                <td><span class="seg-tag seg-{seg}">{label}</span></td>
+                <td>{seg_tag(seg, label)}</td>
                 <td>{ctrl}</td><td>{treat}</td>
-                <td style="color:{lift_color};font-weight:500">{lift}</td>
+                <td style="color:{lift_color};font-weight:600">{lift}</td>
                 <td><span class="badge {b}">{bl}</span></td>
             </tr>"""
 
@@ -517,7 +577,10 @@ elif page == "KPIs":
             <div class="panel">
                 <span class="panel-title">Results summary</span>
                 <table class="pulse-table">
-                    <thead><tr><th>Segment</th><th>Control</th><th>Treatment</th><th>Lift</th><th>Result</th></tr></thead>
+                    <thead><tr>
+                        <th>Segment</th><th>Control</th><th>Treatment</th>
+                        <th>Lift</th><th>Significance</th>
+                    </tr></thead>
                     <tbody>{rows_html}</tbody>
                 </table>
             </div>
@@ -536,18 +599,16 @@ elif page == "KPIs":
     st.bar_chart(pred_df, color="#00b87a", height=180)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────────────────────
 # USER DEMO
-# ══════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────────────────────
 elif page == "User Demo":
-    st.markdown('<div class="pulse-title">User Demo</div>', unsafe_allow_html=True)
-    st.markdown('<div class="pulse-subtitle">Simulate a user seeing the upgrade message and record their response</div>', unsafe_allow_html=True)
+    page_header("User Demo", "Simulate a user seeing the upgrade message and record their response")
 
-    params_raw = api_get("/api/global-params") or []
-    params     = {p["key"]: p["value"] for p in params_raw}
-    price      = params.get("pro_price_amd", "2900")
-    discount   = params.get("dormant_discount", "20")
-    templates  = params.get("template_count", "120")
+    params_map = get_global_params()
+    price     = int(params_map.get("pro_price_amd",  {}).get("value", 2900))
+    discount  = int(params_map.get("dormant_discount", {}).get("value", 20))
+    templates = int(params_map.get("template_count",  {}).get("value", 120))
 
     DEFAULT_MSGS = {
         "power":   f"You've exported {{{{export_count}}}} times and hit limits {{{{paywall_hits}}}} times — go unlimited for AMD {price}/month.",
@@ -564,8 +625,7 @@ elif page == "User Demo":
     col_left, col_right = st.columns([1, 1])
 
     with col_left:
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
-        st.markdown('<span class="panel-title">Simulation controls</span>', unsafe_allow_html=True)
+        panel_header("Simulation controls")
 
         seg_choice = st.selectbox(
             "Simulated segment",
@@ -579,9 +639,7 @@ elif page == "User Demo":
         )
 
         msg = DEFAULT_MSGS.get(seg_choice, "")
-        rendered = msg.replace("{{export_count}}", "9").replace("{{paywall_hits}}", "7")
-        st.markdown(f'<div style="margin:14px 0 6px;font-size:11px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:.6px">Message preview</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="prev-box">{rendered}</div>', unsafe_allow_html=True)
+        render_preview(msg, price, discount, templates)
 
         bc1, bc2 = st.columns(2)
         upgraded = bc1.button("Upgrade", use_container_width=True, type="primary")
@@ -601,7 +659,7 @@ elif page == "User Demo":
                 st.session_state.demo_log.insert(0, {"seg": seg_choice, "group": group_choice, "decision": "try_later"})
                 st.rerun()
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        panel_close()
 
         m1, m2 = st.columns(2)
         m1.metric("Upgraded",  st.session_state.upgraded_count)
@@ -614,62 +672,65 @@ elif page == "User Demo":
             st.rerun()
 
     with col_right:
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
-        st.markdown('<span class="panel-title">Response log — backend events</span>', unsafe_allow_html=True)
+        panel_header("Response log — backend events")
 
         if st.session_state.demo_log:
             for entry in st.session_state.demo_log[:12]:
                 dec_color = "#00b87a" if entry["decision"] == "upgraded" else "#d97706"
                 st.markdown(
                     f'<div class="log-entry">'
-                    f'<span style="color:#4b5563;margin-right:8px">seg=</span><strong>{entry["seg"]}</strong>'
-                    f'&nbsp;&nbsp;group=<strong>{entry["group"]}</strong>'
-                    f'&nbsp;&nbsp;decision=<span style="color:{dec_color};font-weight:600">{entry["decision"]}</span>'
+                    f'{seg_tag(entry["seg"], entry["seg"].title())}'
+                    f'&nbsp;<span style="color:{dec_color};font-weight:600">{entry["decision"]}</span>'
+                    f'&nbsp;<span style="color:#9ca3af">{entry["group"]}</span>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
         else:
-            st.markdown('<div style="font-size:12px;color:#4b5563;padding:20px 0">No responses yet. Simulate a user response on the left.</div>', unsafe_allow_html=True)
+            st.caption("No responses yet — click Upgrade or Try Later.")
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        panel_close()
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────────────────────
 # CAMPAIGN EDITOR
-# ══════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────────────────────
 elif page == "Campaign Editor":
-    st.markdown('<div class="pulse-title">Campaign Editor</div>', unsafe_allow_html=True)
-    st.markdown('<div class="pulse-subtitle">Edit messages, set channels and triggers, launch A/B tests</div>', unsafe_allow_html=True)
+    page_header("Campaign Editor", "Edit messages, set channels and triggers, launch A/B tests")
 
-    params_raw = api_get("/api/global-params") or []
-    params_map = {p["key"]: p for p in params_raw}
+    params_map = get_global_params()
+    price_val = int(params_map.get("pro_price_amd",   {}).get("value", 2900))
+    disc_val  = int(params_map.get("dormant_discount", {}).get("value", 20))
+    tmpl_val  = int(params_map.get("template_count",   {}).get("value", 120))
 
     # Global params
-    st.markdown('<div class="panel"><span class="panel-title">Global parameters</span>', unsafe_allow_html=True)
+    panel_header("Global parameters")
     gp1, gp2, gp3 = st.columns(3)
 
     with gp1:
-        price_val = st.number_input("Pro price (AMD)", value=int(params_map.get("pro_price_amd", {}).get("value", 2900)), step=100, key="g_price")
+        price_val = st.number_input("Pro price (AMD)", value=price_val, step=100, key="g_price")
         if st.button("Save", key="save_price"):
             api_put("/api/global-params/pro_price_amd", {"value": str(price_val)})
             st.success("Saved")
+            st.cache_data.clear()
             st.rerun()
 
     with gp2:
-        disc_val = st.number_input("Discount % (dormant)", value=int(params_map.get("dormant_discount", {}).get("value", 20)), step=1, key="g_disc")
+        disc_val = st.number_input("Discount % (dormant)", value=disc_val, step=1, key="g_disc")
         if st.button("Save", key="save_disc"):
             api_put("/api/global-params/dormant_discount", {"value": str(disc_val)})
             st.success("Saved")
+            st.cache_data.clear()
             st.rerun()
 
     with gp3:
-        tmpl_val = st.number_input("Template count", value=int(params_map.get("template_count", {}).get("value", 120)), step=10, key="g_tmpl")
+        tmpl_val = st.number_input("Template count", value=tmpl_val, step=10, key="g_tmpl")
         if st.button("Save", key="save_tmpl"):
             api_put("/api/global-params/template_count", {"value": str(tmpl_val)})
             st.success("Saved")
+            st.cache_data.clear()
             st.rerun()
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    panel_close()
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Campaign cards
@@ -690,28 +751,24 @@ elif page == "Campaign Editor":
                 msg_obj = c.get("active_message") or {}
                 body    = msg_obj.get("body", "")
                 color   = COLORS.get(seg, "#111")
-                badge   = "badge-running" if status == "running" else "badge-draft"
+                badge, badge_label = status_badge(status)
 
                 with col:
                     st.markdown(f"""
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                            <span class="seg-tag seg-{seg}">{label}</span>
-                            <span class="badge {badge}">{status}</span>
-                        </div>
-                        <div style="font-size:11px;color:#4b5563;margin-bottom:10px">
-                            {channel} &nbsp;·&nbsp; {trigger}
+                        <div class="panel" style="margin-bottom:6px">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                                {seg_tag(seg, label)}
+                                <span class="badge {badge}">{badge_label}</span>
+                            </div>
+                            <div style="font-size:11px;color:#6b7280">
+                                {channel} &nbsp;·&nbsp; {trigger}
+                            </div>
                         </div>
                     """, unsafe_allow_html=True)
 
                     new_body = st.text_area("Message template", value=body, height=90, key=f"body_{cid}", label_visibility="collapsed")
 
-                    preview = new_body \
-                        .replace("{{price}}", str(price_val)) \
-                        .replace("{{discount}}", str(disc_val)) \
-                        .replace("{{template_count}}", str(tmpl_val)) \
-                        .replace("{{export_count}}", "9") \
-                        .replace("{{paywall_hits}}", "7")
-                    st.markdown(f'<div class="prev-box">{preview}</div>', unsafe_allow_html=True)
+                    render_preview(new_body, price_val, disc_val, tmpl_val)
 
                     ba, bb = st.columns(2)
                     if ba.button("Save message", key=f"save_{cid}", use_container_width=True):
