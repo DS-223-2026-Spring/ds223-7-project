@@ -1,6 +1,6 @@
 """
 Pulse — Data Quality Report
-Data Scientist: Areg Avagyan
+Data Scientist: Silva Vardanyan
 
 Connects to the Pulse database, runs a full data-quality audit across
 all relevant tables and the behavioral feature view, and writes a

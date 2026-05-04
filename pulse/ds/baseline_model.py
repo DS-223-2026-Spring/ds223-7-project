@@ -1,6 +1,6 @@
 """
 Pulse — Baseline Predictive Models
-Data Scientist: Areg Avagyan
+Data Scientist: Silva Vardanyan
 
 Two baseline tasks:
     1. Conversion prediction  — logistic regression & decision tree to predict

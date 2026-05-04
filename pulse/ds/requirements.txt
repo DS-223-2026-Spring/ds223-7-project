@@ -1,3 +1,4 @@
+notebook<7
 jupyter
 pandas
 numpy

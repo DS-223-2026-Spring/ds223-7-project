@@ -1,6 +1,6 @@
 """
 Pulse — Exploratory Data Analysis
-Data Scientist: Areg Avagyan
+Data Scientist: Silva Vardanyan
 
 Loads behavioral data from the Pulse database and produces summary
 statistics and visual exploration used to inform segmentation and

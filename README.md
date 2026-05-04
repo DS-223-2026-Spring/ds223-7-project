@@ -19,11 +19,10 @@ Pulse is a microservice application that helps Armat (an Armenian writing SaaS) 
 
 | Name | Role |
 |------|------|
-| Silva Vardanyan | Product Manager |
+| Silva Vardanyan | Product Manager & Data Scientist |
 | Albert Hakobyan | Backend Developer |
 | Anzhelika Simonyan | Frontend Developer |
 | Narek Dilbaryan | Database Engineer |
-| Areg Avagyan | Data Scientist |
 
 ---
 
@@ -36,12 +35,12 @@ ds223-7-project/
 └── pulse/
     ├── api/        FastAPI backend          →  localhost:8008
     ├── app/        Streamlit dashboard      →  localhost:8501
-    ├── ds/         Data science models
+    ├── ds/         Jupyter notebooks        →  localhost:8888
     ├── etl/        DB seed pipeline (exits after run)
     └── pgadmin/    pgAdmin auto-configuration
 ```
 
-Five Docker containers run together:
+Six Docker containers run together:
 
 | Container | Description | Port |
 |-----------|-------------|------|
@@ -49,6 +48,7 @@ Five Docker containers run together:
 | `pgadmin` | pgAdmin UI | 5050 |
 | `back` | FastAPI REST backend | 8008 |
 | `front` | Streamlit dashboard | 8501 |
+| `ds` | Jupyter notebooks (data science) | 8888 |
 | `etl` | Seeds the database, then exits | — |
 
 ---
@@ -72,6 +72,7 @@ docker-compose up --build
 |---------|-----|
 | Streamlit dashboard | http://localhost:8501 |
 | FastAPI Swagger UI | http://localhost:8008/docs |
+| Jupyter notebooks | http://localhost:8888 |
 | pgAdmin | http://localhost:5050 |
 
 **pgAdmin login:** `admin@admin.com` / `admin`
@@ -135,7 +136,10 @@ Full interactive docs at **http://localhost:8008/docs**
 
 ## Documentation
 
-Full project documentation is available via MkDocs:
+Full project documentation is available at:
+**https://ds-223-2026-spring.github.io/ds223-7-project/**
+
+To preview locally:
 
 ```bash
 pip install -r requirements-docs.txt
@@ -143,6 +147,8 @@ mkdocs serve
 ```
 
 Then open **http://localhost:8000**
+
+The docs site auto-deploys on every push to `main` via `.github/workflows/ci.yaml`.
 
 ---
 
