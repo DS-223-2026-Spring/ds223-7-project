@@ -1,0 +1,48 @@
+services:
+
+  db:
+    build: ./myapp/etl
+    container_name: pulse_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pulse
+      POSTGRES_USER: pulse_user
+      POSTGRES_PASSWORD: pulse_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulse_user -d pulse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pulse_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  etl:
+    build: ./myapp/etl
+    container_name: pulse_etl
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: pulse
+      DB_USER: pulse_user
+      DB_PASSWORD: pulse_pass
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
