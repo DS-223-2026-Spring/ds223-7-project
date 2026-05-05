@@ -5,6 +5,7 @@ Single file as required by project structure spec.
 """
 
 from datetime import datetime
+from typing import Literal
 from pydantic import BaseModel
 
 
@@ -150,5 +151,12 @@ class DemoMessageOut(BaseModel):
 class DemoResponse(BaseModel):
     """Payload sent when the user clicks 'Upgrade' or 'Try Later'."""
     segment_name: str
-    decision: str          # 'upgraded' | 'try_later'
-    ab_group: str          # 'control' | 'treatment'
+    decision: Literal['upgraded', 'try_later', 'dismissed']
+    ab_group: Literal['control', 'treatment']
+    
+class DemoRespondResult(BaseModel):
+    """Response after recording an upgrade / try-later decision."""
+    status: Literal['recorded']
+    decision: Literal['upgraded', 'try_later', 'dismissed']
+    ab_group: Literal['control', 'treatment']
+    segment: str
