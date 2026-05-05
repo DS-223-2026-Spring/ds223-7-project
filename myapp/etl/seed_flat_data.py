@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DB_CONFIG = {
-    "host":     os.getenv("DB_HOST",     "localhost"),
+    "host":     os.getenv("DB_HOST",     "db"),
     "port":     int(os.getenv("DB_PORT", "5432")),
     "dbname":   os.getenv("DB_NAME",     "pulse"),
     "user":     os.getenv("DB_USER",     "pulse_user"),
@@ -66,7 +66,8 @@ def validate_row_counts(conn):
             print(f"  {icon}  {table}: {count} rows")
 
 
-if __name__ == "__main__":
+def main():
+    """Connect to the database, load all CSV files, and validate row counts."""
     try:
         conn = psycopg2.connect(**DB_CONFIG, connect_timeout=5)
         print("✅ Connected to database\n")
@@ -86,3 +87,7 @@ if __name__ == "__main__":
     validate_row_counts(conn)
     conn.close()
     print("\n✅ Done.")
+
+
+if __name__ == "__main__":
+    main()

@@ -624,3 +624,56 @@ WHERE mt.campaign_id = c.campaign_id
 -- =============================================================================
 -- SCHEMA COMPLETE
 -- =============================================================================
+
+-- =============================================================================
+-- MILESTONE 3 ADDITIONS
+-- =============================================================================
+
+-- Additional indexes for backend and DS query performance
+CREATE INDEX IF NOT EXISTS idx_users_plan
+    ON users(plan);
+
+CREATE INDEX IF NOT EXISTS idx_users_status
+    ON users(status);
+
+CREATE INDEX IF NOT EXISTS idx_users_created_at
+    ON users(created_at);
+
+CREATE INDEX IF NOT EXISTS idx_conversion_outcomes_decision
+    ON conversion_outcomes(decision);
+
+CREATE INDEX IF NOT EXISTS idx_conversion_outcomes_converted_at
+    ON conversion_outcomes(converted_at);
+
+CREATE INDEX IF NOT EXISTS idx_notification_events_event_type
+    ON notification_events(event_type);
+
+CREATE INDEX IF NOT EXISTS idx_notification_events_occurred_at
+    ON notification_events(occurred_at);
+
+CREATE INDEX IF NOT EXISTS idx_tool_usage_logs_used_at
+    ON tool_usage_logs(used_at);
+
+CREATE INDEX IF NOT EXISTS idx_ab_assignments_group
+    ON ab_assignments(test_id, group_type);
+
+-- Constraint: ensure duration_seconds is positive when set
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_duration_positive') THEN
+    ALTER TABLE session_events ADD CONSTRAINT chk_duration_positive CHECK (duration_seconds IS NULL OR duration_seconds >= 0);
+  END IF;
+END $$;
+
+-- Constraint: ensure revenue is positive when set
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_revenue_positive') THEN
+    ALTER TABLE conversion_outcomes ADD CONSTRAINT chk_revenue_positive CHECK (revenue_amd IS NULL OR revenue_amd >= 0);
+  END IF;
+END $$;
+
+-- Constraint: ensure p_value is between 0 and 1
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_p_value_range') THEN
+    ALTER TABLE ab_test_results ADD CONSTRAINT chk_p_value_range CHECK (p_value IS NULL OR (p_value >= 0 AND p_value <= 1));
+  END IF;
+END $$;

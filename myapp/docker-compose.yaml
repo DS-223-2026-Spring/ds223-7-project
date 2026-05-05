@@ -1,0 +1,86 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    container_name: pulse_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-pulse}
+      POSTGRES_USER: ${DB_USER:-pulse_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pulse_pass}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./pulse/etl/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pulse_user} -d ${DB_NAME:-pulse}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pulse_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  back:
+    build: ./pulse/api
+    container_name: back
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-pulse_user}:${DB_PASSWORD:-pulse_pass}@db:5432/${DB_NAME:-pulse}
+    ports:
+      - "8008:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  front:
+    build: ./pulse/app
+    container_name: front
+    restart: unless-stopped
+    environment:
+      API_URL: http://back:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - back
+
+  ds:
+    build: ./pulse/ds
+    container_name: ds
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-pulse_user}:${DB_PASSWORD:-pulse_pass}@db:5432/${DB_NAME:-pulse}
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./pulse/ds:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  etl:
+    build: ./myapp/etl
+    container_name: pulse_etl
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-pulse}
+      DB_USER: ${DB_USER:-pulse_user}
+      DB_PASSWORD: ${DB_PASSWORD:-pulse_pass}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

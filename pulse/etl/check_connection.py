@@ -21,7 +21,9 @@ EXPECTED_TABLES = [
     "ab_test_results", "notification_events", "conversion_outcomes",
 ]
 
+
 def check_connection():
+    """Connect to PostgreSQL. Returns connection or exits on failure."""
     print("Connecting to database...")
     try:
         conn = psycopg2.connect(**DB_CONFIG, connect_timeout=5)
@@ -31,7 +33,9 @@ def check_connection():
         print(f"❌ Connection failed: {e}")
         sys.exit(1)
 
+
 def verify_tables(conn):
+    """Check all 15 expected tables exist in the public schema."""
     print("--- Checking tables ---")
     with conn.cursor() as cur:
         cur.execute("""
@@ -48,7 +52,9 @@ def verify_tables(conn):
     else:
         print(f"❌ Missing tables: {missing}\n")
 
+
 def verify_seed_data(conn):
+    """Check minimum row counts in key seed tables."""
     print("--- Checking seed data ---")
     checks = {
         "segments":          ("SELECT COUNT(*) FROM segments",          4),
@@ -62,6 +68,7 @@ def verify_seed_data(conn):
             count = cur.fetchone()[0]
             icon = "✅" if count >= expected else "❌"
             print(f"  {icon}  {label}: {count} rows (expected {expected})")
+
 
 if __name__ == "__main__":
     conn = check_connection()

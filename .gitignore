@@ -105,6 +105,11 @@ celerybeat.pid
 # SageMath
 *.sage.py
 
+# Environment variable files
+.env
+myapp/.env
+pulse/.env
+
 # Environments
 .venv/
 env/
