@@ -658,16 +658,22 @@ CREATE INDEX IF NOT EXISTS idx_ab_assignments_group
     ON ab_assignments(test_id, group_type);
 
 -- Constraint: ensure duration_seconds is positive when set
-ALTER TABLE session_events
-    ADD CONSTRAINT IF NOT EXISTS chk_duration_positive
-    CHECK (duration_seconds IS NULL OR duration_seconds >= 0);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_duration_positive') THEN
+    ALTER TABLE session_events ADD CONSTRAINT chk_duration_positive CHECK (duration_seconds IS NULL OR duration_seconds >= 0);
+  END IF;
+END $$;
 
 -- Constraint: ensure revenue is positive when set
-ALTER TABLE conversion_outcomes
-    ADD CONSTRAINT IF NOT EXISTS chk_revenue_positive
-    CHECK (revenue_amd IS NULL OR revenue_amd >= 0);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_revenue_positive') THEN
+    ALTER TABLE conversion_outcomes ADD CONSTRAINT chk_revenue_positive CHECK (revenue_amd IS NULL OR revenue_amd >= 0);
+  END IF;
+END $$;
 
 -- Constraint: ensure p_value is between 0 and 1
-ALTER TABLE ab_test_results
-    ADD CONSTRAINT IF NOT EXISTS chk_p_value_range
-    CHECK (p_value IS NULL OR (p_value >= 0 AND p_value <= 1));
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_p_value_range') THEN
+    ALTER TABLE ab_test_results ADD CONSTRAINT chk_p_value_range CHECK (p_value IS NULL OR (p_value >= 0 AND p_value <= 1));
+  END IF;
+END $$;

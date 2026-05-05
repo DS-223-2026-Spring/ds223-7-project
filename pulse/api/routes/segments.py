@@ -14,6 +14,13 @@ from schema import SegmentCount, SegmentBehavioralAvg
 
 router = APIRouter(prefix="/api/segments", tags=["segments"])
 
+SEGMENT_COLORS = {
+    "power":   "#00b87a",
+    "growing": "#3b82f6",
+    "casual":  "#f59e0b",
+    "dormant": "#9ca3af",
+}
+
 
 @router.get("/counts", response_model=list[SegmentCount])
 def get_segment_counts(db: Session = Depends(get_db)):
@@ -44,7 +51,7 @@ def get_behavioral_averages(db: Session = Depends(get_db)):
             SegmentBehavioralAvg(
                 segment_name=r["segment_name"],
                 label=r["segment_name"],
-                color_hex="",
+                color_hex=SEGMENT_COLORS.get(r["segment_name"], "#9ca3af"),
                 avg_sessions_per_week=r.get("avg_sessions_per_week"),
                 avg_paywall_hits=r.get("avg_paywall_hits"),
                 avg_synonym_depth=r.get("avg_synonym_depth"),
