@@ -1,4 +1,4 @@
-"""Pulse Dashboard — Streamlit frontend (Milestone 3: mock data, refined for #89).
+"""Pulse Dashboard — Streamlit frontend (Milestone 3: mock data).
 
 Screens match PM endpoint specs from issues #67 and #68:
   Segments   → /api/segments/counts + /api/segments/behavioral-averages
@@ -6,6 +6,8 @@ Screens match PM endpoint specs from issues #67 and #68:
   KPIs       → /api/kpis
   Campaign   → /api/campaigns/* + /api/global-params/*
   User Demo  → /api/demo/message/{segment_name} + /api/demo/respond
+
+Issue #91: each screen has data tables, filters, charts, forms, and model results.
 """
 import streamlit as st
 import pandas as pd
@@ -39,7 +41,7 @@ AB_SUMMARY = [
     {"segment_name": "dormant", "control_rate": 0.005, "treatment_rate": 0.006, "lift_pct": 20.0, "p_value": 0.480, "significance": "not significant", "status": "pending"},
 ]
 
-# /api/ab-tests/comparison  (side-by-side variant performance)
+# /api/ab-tests/comparison
 AB_COMPARISON = [
     {"segment_name": "power",   "variant": "control",   "conversion_rate": 0.062, "avg_sessions": 8.1, "avg_exports": 8.8, "sample_size": 62},
     {"segment_name": "power",   "variant": "treatment", "conversion_rate": 0.091, "avg_sessions": 8.9, "avg_exports": 9.6, "sample_size": 62},
@@ -53,43 +55,31 @@ AB_COMPARISON = [
 
 # /api/kpis
 KPIS = {
-    "overall_conversion_rate":   0.054,
-    "avg_time_to_convert_days":  6.2,
-    "retention_30d":             0.83,
+    "overall_conversion_rate":      0.054,
+    "avg_time_to_convert_days":     6.2,
+    "retention_30d":                0.83,
     "notification_engagement_rate": 0.41,
 }
 
-# /api/campaigns  (list)
+# /api/campaigns
 CAMPAIGNS = [
     {
-        "campaign_id": 1,
-        "name": "Power User Upgrade",
+        "campaign_id": 1, "name": "Power User Upgrade",
         "message": "You're a power user! Unlock unlimited exports with Pro.",
-        "channel": "in-app",
-        "trigger": "paywall_hit",
-        "status": "active",
-        "discount_pct": 20,
-        "test_duration_days": 14,
+        "channel": "in-app", "trigger": "paywall_hit", "status": "active",
+        "discount_pct": 20, "test_duration_days": 14,
     },
     {
-        "campaign_id": 2,
-        "name": "Growing User Nudge",
+        "campaign_id": 2, "name": "Growing User Nudge",
         "message": "You're growing fast — go Pro to remove all limits.",
-        "channel": "email",
-        "trigger": "session_threshold",
-        "status": "draft",
-        "discount_pct": 15,
-        "test_duration_days": 14,
+        "channel": "email", "trigger": "session_threshold", "status": "draft",
+        "discount_pct": 15, "test_duration_days": 14,
     },
     {
-        "campaign_id": 3,
-        "name": "Re-engage Dormant",
+        "campaign_id": 3, "name": "Re-engage Dormant",
         "message": "We miss you! Come back and see what's new in Pulse.",
-        "channel": "push",
-        "trigger": "inactivity_14d",
-        "status": "paused",
-        "discount_pct": 30,
-        "test_duration_days": 7,
+        "channel": "push", "trigger": "inactivity_14d", "status": "paused",
+        "discount_pct": 30, "test_duration_days": 7,
     },
 ]
 
@@ -141,20 +131,34 @@ if page == "Segments":
     st.title("Segments")
     st.caption("Free-user behavioural clustering — 4 segments")
 
+    # — Filter bar ———————————————————————————————————————————————————————————————————————————
+    all_seg_names = [s["segment_name"].title() for s in SEGMENT_COUNTS]
+    seg_filter_options = st.multiselect(
+        "Filter segments",
+        options=all_seg_names,
+        default=all_seg_names,
+        key="seg_multi_filter",
+    )
+    if not seg_filter_options:
+        seg_filter_options = all_seg_names  # show all if nothing selected
+
     # Section 1: User counts per segment  (/api/segments/counts)
     st.subheader("User Counts by Segment")
     df_counts = pd.DataFrame(SEGMENT_COUNTS)
     df_counts["segment_name"] = df_counts["segment_name"].str.title()
-    cols = st.columns(4)
-    for i, row in df_counts.iterrows():
+    df_counts = df_counts[df_counts["segment_name"].isin(seg_filter_options)]
+    cols = st.columns(len(df_counts) if len(df_counts) > 0 else 1)
+    for i, (_, row) in enumerate(df_counts.iterrows()):
         cols[i].metric(row["segment_name"], f'{row["user_count"]:,} users')
-    st.bar_chart(df_counts.set_index("segment_name")["user_count"])
+    if not df_counts.empty:
+        st.bar_chart(df_counts.set_index("segment_name")["user_count"])
     st.divider()
 
-    # Section 2: Behavioral averages per segment  (/api/segments/behavioral-averages)
+    # Section 2: Behavioral averages  (/api/segments/behavioral-averages)
     st.subheader("Behavioral Averages by Segment")
     df_beh = pd.DataFrame(SEGMENT_BEHAVIORAL)
     df_beh["segment_name"] = df_beh["segment_name"].str.title()
+    df_beh = df_beh[df_beh["segment_name"].isin(seg_filter_options)]
     st.dataframe(
         df_beh.rename(columns={
             "segment_name":          "Segment",
@@ -165,13 +169,14 @@ if page == "Segments":
         use_container_width=True,
         hide_index=True,
     )
-    c1, c2, c3 = st.columns(3)
-    c1.bar_chart(df_beh.set_index("segment_name")["avg_sessions_per_week"])
-    c1.caption("Avg Sessions / Week")
-    c2.bar_chart(df_beh.set_index("segment_name")["avg_exports"])
-    c2.caption("Avg Exports")
-    c3.bar_chart(df_beh.set_index("segment_name")["avg_paywall_hits"])
-    c3.caption("Avg Paywall Hits")
+    if not df_beh.empty:
+        c1, c2, c3 = st.columns(3)
+        c1.bar_chart(df_beh.set_index("segment_name")["avg_sessions_per_week"])
+        c1.caption("Avg Sessions / Week")
+        c2.bar_chart(df_beh.set_index("segment_name")["avg_exports"])
+        c2.caption("Avg Exports")
+        c3.bar_chart(df_beh.set_index("segment_name")["avg_paywall_hits"])
+        c3.caption("Avg Paywall Hits")
 
 # ────────────────────────────────────────────────────────────────────────────────
 #  A/B TESTS  →  /api/ab-tests/summary  +  /api/ab-tests/comparison
@@ -184,32 +189,58 @@ elif page == "A/B Tests":
 
     # Tab 1: Summary  (/api/ab-tests/summary)
     with tab_summary:
-        st.subheader("Test Summary — all segments")
+        st.subheader("Test Summary — model results")
+
+        # Filter bar
+        f1, f2 = st.columns([1, 1])
+        sig_filter = f1.selectbox(
+            "Filter by significance",
+            ["All", "Significant only", "Not significant only"],
+            key="ab_sig_filter",
+        )
+        status_filter = f2.selectbox(
+            "Filter by status",
+            ["All", "running", "pending", "complete"],
+            key="ab_status_filter",
+        )
+
         df_sum = pd.DataFrame(AB_SUMMARY)
+        if sig_filter == "Significant only":
+            df_sum = df_sum[df_sum["significance"] == "significant"]
+        elif sig_filter == "Not significant only":
+            df_sum = df_sum[df_sum["significance"] == "not significant"]
+        if status_filter != "All":
+            df_sum = df_sum[df_sum["status"] == status_filter]
+
         running = df_sum[df_sum["status"] == "running"].shape[0]
         sig     = df_sum[df_sum["significance"] == "significant"].shape[0]
         m1, m2, m3 = st.columns(3)
-        m1.metric("Tests running", running)
+        m1.metric("Tests in view", len(df_sum))
         m2.metric("Significant results", sig)
-        m3.metric("Segments tested", len(df_sum))
+        m3.metric("Tests running", running)
         st.divider()
-        st.dataframe(
-            df_sum.rename(columns={
-                "segment_name":   "Segment",
-                "control_rate":   "Control Rate",
-                "treatment_rate": "Treatment Rate",
-                "lift_pct":       "Lift %",
-                "p_value":        "p-value",
-                "significance":   "Significance",
-                "status":         "Status",
-            }).assign(**{
-                "Control Rate":   lambda d: d["Control Rate"].map(lambda x: f"{x:.1%}"),
-                "Treatment Rate": lambda d: d["Treatment Rate"].map(lambda x: f"{x:.1%}"),
-                "Lift %":         lambda d: d["Lift %"].map(lambda x: f"+{x:.1f}%"),
-            }),
-            use_container_width=True,
-            hide_index=True,
-        )
+
+        # Comparison table with lift and p-value columns
+        if not df_sum.empty:
+            st.dataframe(
+                df_sum.rename(columns={
+                    "segment_name":   "Segment",
+                    "control_rate":   "Control Rate",
+                    "treatment_rate": "Treatment Rate",
+                    "lift_pct":       "Lift %",
+                    "p_value":        "p-value",
+                    "significance":   "Significance",
+                    "status":         "Status",
+                }).assign(**{
+                    "Control Rate":   lambda d: d["Control Rate"].map(lambda x: f"{x:.1%}"),
+                    "Treatment Rate": lambda d: d["Treatment Rate"].map(lambda x: f"{x:.1%}"),
+                    "Lift %":         lambda d: d["Lift %"].map(lambda x: f"+{x:.1f}%"),
+                }),
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.info("No results match the selected filters.")
 
     # Tab 2: Variant Comparison  (/api/ab-tests/comparison)
     with tab_comparison:
@@ -246,6 +277,17 @@ elif page == "KPIs":
     st.title("KPIs")
     st.caption("Platform-level conversion and retention metrics")
 
+    # Period filter
+    kpi_period = st.radio(
+        "Reporting period",
+        ["Last 7 days", "Last 30 days", "Last 90 days"],
+        index=1,
+        horizontal=True,
+        key="kpi_period",
+    )
+    st.caption(f"Showing mock data — period selector wires to /api/kpis?period=... in M4")
+    st.divider()
+
     # 3 big metric cards
     k1, k2, k3 = st.columns(3)
     k1.metric(
@@ -281,26 +323,40 @@ elif page == "Campaign Editor":
     st.title("Campaign Editor")
     st.caption("Manage upgrade campaigns and global test parameters")
 
+    # Campaign list filter
+    status_options = ["All"] + list({c["status"] for c in CAMPAIGNS})
+    camp_status_filter = st.selectbox(
+        "Filter campaigns by status",
+        status_options,
+        key="camp_list_filter",
+    )
+    filtered_campaigns = CAMPAIGNS if camp_status_filter == "All" else [
+        c for c in CAMPAIGNS if c["status"] == camp_status_filter
+    ]
+
     left_col, right_col = st.columns([1, 2])
 
-    # Left column: campaign list  (/api/campaigns)
     with left_col:
         st.subheader("Campaigns")
-        campaign_names = [f'#{c["campaign_id"]} — {c["name"]}' for c in CAMPAIGNS]
-        selected_idx = st.selectbox(
-            "Select campaign",
-            range(len(CAMPAIGNS)),
-            format_func=lambda i: campaign_names[i],
-            key="campaign_select",
-        )
-        c = CAMPAIGNS[selected_idx]
+        if not filtered_campaigns:
+            st.info("No campaigns match the selected filter.")
+            selected_c = CAMPAIGNS[0]
+        else:
+            campaign_names = [f'#{c["campaign_id"]} — {c["name"]}' for c in filtered_campaigns]
+            selected_idx = st.selectbox(
+                "Select campaign",
+                range(len(filtered_campaigns)),
+                format_func=lambda i: campaign_names[i],
+                key="campaign_select",
+            )
+            selected_c = filtered_campaigns[selected_idx]
 
+        c = selected_c
         st.write(f"**Channel:** {c['channel'].upper()}")
         st.write(f"**Trigger:** {c['trigger']}")
         status_color = {"active": "✅", "draft": "⚪", "paused": "⏸️"}
         st.write(f"**Status:** {status_color.get(c['status'], '•')} {c['status'].title()}")
 
-    # Right column: message editor + launch controls  (/api/campaigns/{id}/message + /launch)
     with right_col:
         st.subheader("Edit Campaign")
         new_name = st.text_input("Campaign name", value=c["name"], key="camp_name")
@@ -309,7 +365,7 @@ elif page == "Campaign Editor":
             value=c["message"],
             height=100,
             key="camp_msg",
-            help="Shown to the user in the app. Will call PUT /api/campaigns/{id}/message in M4.",
+            help="Will call PUT /api/campaigns/{id}/message in M4.",
         )
         ch1, ch2 = st.columns(2)
         new_channel = ch1.selectbox(
@@ -325,35 +381,27 @@ elif page == "Campaign Editor":
             key="camp_trigger",
         )
         d1, d2 = st.columns(2)
-        new_discount = d1.number_input(
-            "Discount %", min_value=0, max_value=100,
-            value=c["discount_pct"], key="camp_discount",
-        )
-        new_duration = d2.number_input(
-            "Test duration (days)", min_value=1, max_value=90,
-            value=c["test_duration_days"], key="camp_duration",
-        )
+        d1.number_input("Discount %",           min_value=0,  max_value=100, value=c["discount_pct"],       key="camp_discount")
+        d2.number_input("Test duration (days)", min_value=1,  max_value=90,  value=c["test_duration_days"], key="camp_duration")
         st.divider()
         b1, b2, b3 = st.columns(3)
         if b1.button("🚀 Launch campaign", key="btn_launch", type="primary"):
-            st.success(f"Campaign \"{new_name}\" launched (mock — no API in M3). Will call POST /api/campaigns/{c['campaign_id']}/launch")
+            st.success(f"Campaign \"{new_name}\" launched (mock). POST /api/campaigns/{c['campaign_id']}/launch")
         if b2.button("💾 Save changes", key="btn_save"):
-            st.info("Changes saved (mock — no API in M3). Will call PUT /api/campaigns/{id}")
+            st.info("Changes saved (mock). PUT /api/campaigns/{id}")
         if b3.button("↺ Reset to draft", key="btn_reset"):
-            st.warning("Campaign reset to draft (mock). Will call DELETE /api/campaigns/{id}/reset")
+            st.warning("Campaign reset (mock). DELETE /api/campaigns/{id}/reset")
 
     st.divider()
-
-    # Global params section  (/api/global-params)
     st.subheader("Global Parameters")
     st.caption("Shared defaults applied to all campaigns unless overridden")
     gp1, gp2, gp3, gp4 = st.columns(4)
-    gp1.number_input("Test Duration (days)", value=GLOBAL_PARAMS["test_duration_days"], min_value=1, max_value=90, key="gp_dur")
-    gp2.number_input("Discount %",           value=GLOBAL_PARAMS["discount_pct"],       min_value=0, max_value=100, key="gp_disc")
-    gp3.number_input("Min Sample Size",       value=GLOBAL_PARAMS["min_sample_size"],    min_value=10, key="gp_sample")
-    gp4.number_input("Significance Threshold",value=GLOBAL_PARAMS["significance_threshold"], min_value=0.0, max_value=1.0, step=0.01, key="gp_sig")
+    gp1.number_input("Test Duration (days)",    value=GLOBAL_PARAMS["test_duration_days"],     min_value=1,  max_value=90,  key="gp_dur")
+    gp2.number_input("Discount %",              value=GLOBAL_PARAMS["discount_pct"],           min_value=0,  max_value=100, key="gp_disc")
+    gp3.number_input("Min Sample Size",         value=GLOBAL_PARAMS["min_sample_size"],        min_value=10,               key="gp_sample")
+    gp4.number_input("Significance Threshold",  value=GLOBAL_PARAMS["significance_threshold"], min_value=0.0, max_value=1.0, step=0.01, key="gp_sig")
     if st.button("Save global params", key="btn_gp_save"):
-        st.success("Global params saved (mock — no API in M3). Will call PUT /api/global-params/{key}")
+        st.success("Global params saved (mock). PUT /api/global-params/{key}")
 
 # ────────────────────────────────────────────────────────────────────────────────
 #  USER DEMO  →  /api/demo/message/{segment_name}  +  /api/demo/respond
@@ -383,22 +431,24 @@ elif page == "User Demo":
         st.write("**How would this user respond?**")
         a_col, d_col = st.columns(2)
         if a_col.button("✅ Accept upgrade", key="btn_accept", type="primary"):
-            st.success("Response 'accept' recorded (mock). Will call POST /api/demo/respond")
+            st.success("Response 'accept' recorded (mock). POST /api/demo/respond")
         if d_col.button("❌ Dismiss", key="btn_dismiss"):
-            st.warning("Response 'dismiss' recorded (mock). Will call POST /api/demo/respond")
+            st.warning("Response 'dismiss' recorded (mock). POST /api/demo/respond")
 
     with stats_col:
-        # Response stats  (aggregated from /api/demo/respond log)
+        # Response stats  (aggregated from /api/demo/respond)
         st.subheader("Response Stats by Segment")
         df_resp = pd.DataFrame(DEMO_RESPONSES)
         df_pivot = df_resp.pivot(index="segment_name", columns="response", values="count").fillna(0).astype(int)
         df_pivot.index = df_pivot.index.str.title()
-        df_pivot.columns = [c.title() for c in df_pivot.columns]
+        df_pivot.columns = [col.title() for col in df_pivot.columns]
         df_pivot["Total"] = df_pivot.sum(axis=1)
-        if "Accept" in df_pivot.columns and "Total" in df_pivot.columns:
+        if "Accept" in df_pivot.columns:
             df_pivot["Accept Rate"] = (df_pivot["Accept"] / df_pivot["Total"]).map(lambda x: f"{x:.0%}")
         st.dataframe(df_pivot, use_container_width=True)
         st.caption("Aggregated responses from /api/demo/respond (M3: mock)")
         if "Accept" in df_pivot.columns:
-            st.bar_chart(df_resp[df_resp["response"] == "accept"].set_index("segment_name")["count"])
+            st.bar_chart(
+                df_resp[df_resp["response"] == "accept"].set_index("segment_name")["count"]
+            )
             st.caption("Accept counts by segment")
