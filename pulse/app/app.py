@@ -429,9 +429,13 @@ elif page == "Campaign Editor":
         st.caption("⚠️ Using demo data — backend unavailable")
 
     raw_gp = api_get("/api/global-params")
-    global_params = raw_gp if raw_gp else GLOBAL_PARAMS
-    if raw_gp is None:
-        pass  # silent fallback — global params section handles its own display
+    if isinstance(raw_gp, list) and raw_gp:
+        # Real API returns list[GlobalParamOut] — convert to dict keyed by "key"
+        global_params = {item["key"]: item["value"] for item in raw_gp}
+    elif isinstance(raw_gp, dict) and raw_gp:
+        global_params = raw_gp
+    else:
+        global_params = GLOBAL_PARAMS
 
     # ── helpers ──────────────────────────────────────────────────────────────
     CHANNEL_ICONS   = {"in-app": "💬", "email": "📧", "push": "🔔"}
@@ -569,10 +573,18 @@ elif page == "Campaign Editor":
     st.caption("Shared A/B test defaults applied across all campaigns")
 
     gp1, gp2, gp3, gp4 = st.columns(4)
-    gp_dur    = gp1.number_input("Test Duration (days)",   value=int(global_params.get("test_duration_days", 14)),   min_value=1,  max_value=90,  key="gp_dur")
-    gp_disc   = gp2.number_input("Discount %",             value=int(global_params.get("discount_pct", 20)),         min_value=0,  max_value=100, key="gp_disc")
-    gp_sample = gp3.number_input("Min Sample Size",        value=int(global_params.get("min_sample_size", 50)),      min_value=10,               key="gp_sample")
-    gp_sig    = gp4.number_input("Significance Threshold", value=float(global_params.get("significance_threshold", 0.05)),
+    def _int(val, default):
+        try: return int(val)
+        except (TypeError, ValueError): return default
+
+    def _float(val, default):
+        try: return float(val)
+        except (TypeError, ValueError): return default
+
+    gp_dur    = gp1.number_input("Test Duration (days)",   value=_int(global_params.get("test_duration_days", 14), 14),   min_value=1,  max_value=90,  key="gp_dur")
+    gp_disc   = gp2.number_input("Discount %",             value=_int(global_params.get("discount_pct", 20), 20),         min_value=0,  max_value=100, key="gp_disc")
+    gp_sample = gp3.number_input("Min Sample Size",        value=_int(global_params.get("min_sample_size", 50), 50),      min_value=10,               key="gp_sample")
+    gp_sig    = gp4.number_input("Significance Threshold", value=_float(global_params.get("significance_threshold", 0.05), 0.05),
                                   min_value=0.0, max_value=1.0, step=0.01, format="%.2f", key="gp_sig")
 
     if st.button("💾 Save global params", key="btn_gp_save"):
