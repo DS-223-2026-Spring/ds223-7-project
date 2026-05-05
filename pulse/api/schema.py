@@ -156,6 +156,7 @@ class DemoResponse(BaseModel):
     
 class DemoRespondResult(BaseModel):
     """Response after recording an upgrade / try-later decision."""
-    status: str
+    status: Literal['recorded']
     decision: Literal['upgraded', 'try_later', 'dismissed']
+    ab_group: Literal['control', 'treatment']
     segment: str

@@ -121,5 +121,6 @@ def record_demo_response(payload: DemoResponse, db: Session = Depends(get_db)):
     return {
         "status": "recorded",
         "decision": payload.decision,
+        "ab_group": payload.ab_group,
         "segment": payload.segment_name,
     }
