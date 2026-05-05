@@ -94,25 +94,57 @@ KPIS = {
     "avg_revenue_amd":              2900.0,
 }
 
-# FIX 2e: /api/campaigns — rename "trigger" → "trigger_event"
+# FIX 2e: /api/campaigns — match real CampaignOut schema exactly
+# Fields: campaign_id, segment_name, segment_label, color_hex,
+#         channel, trigger_event, status, active_message, created_at, launched_at
 CAMPAIGNS = [
     {
-        "campaign_id": 1, "name": "Power User Upgrade",
-        "message": "You're a power user! Unlock unlimited exports with Pro.",
-        "channel": "in-app", "trigger_event": "paywall_hit", "status": "active",
-        "discount_pct": 20, "test_duration_days": 14,
+        "campaign_id": 1,
+        "segment_name": "power",
+        "segment_label": "Power Users",
+        "color_hex": "#00b87a",
+        "channel": "in-app",
+        "trigger_event": "paywall_hit",
+        "status": "active",
+        "active_message": {"body": "You're a power user! Unlock unlimited exports with Pro."},
+        "created_at": "2026-04-01T10:00:00",
+        "launched_at": "2026-04-03T09:00:00",
     },
     {
-        "campaign_id": 2, "name": "Growing User Nudge",
-        "message": "You're growing fast — go Pro to remove all limits.",
-        "channel": "email", "trigger_event": "export_attempt", "status": "draft",
-        "discount_pct": 15, "test_duration_days": 14,
+        "campaign_id": 2,
+        "segment_name": "growing",
+        "segment_label": "Growing Users",
+        "color_hex": "#3b82f6",
+        "channel": "email",
+        "trigger_event": "export_attempt",
+        "status": "draft",
+        "active_message": {"body": "You're growing fast — go Pro to remove all limits."},
+        "created_at": "2026-04-05T11:00:00",
+        "launched_at": None,
     },
     {
-        "campaign_id": 3, "name": "Re-engage Dormant",
-        "message": "We miss you! Come back and see what's new in Pulse.",
-        "channel": "push", "trigger_event": "session_start", "status": "paused",
-        "discount_pct": 30, "test_duration_days": 7,
+        "campaign_id": 3,
+        "segment_name": "casual",
+        "segment_label": "Casual Users",
+        "color_hex": "#f59e0b",
+        "channel": "push",
+        "trigger_event": "session_start",
+        "status": "draft",
+        "active_message": {"body": "Enjoying Pulse? Pro gives you 5x more exports and premium templates."},
+        "created_at": "2026-04-07T12:00:00",
+        "launched_at": None,
+    },
+    {
+        "campaign_id": 4,
+        "segment_name": "dormant",
+        "segment_label": "Dormant Users",
+        "color_hex": "#9ca3af",
+        "channel": "push",
+        "trigger_event": "session_start",
+        "status": "draft",
+        "active_message": {"body": "We miss you! Come back and get 30% off Pro for the next 48 hours."},
+        "created_at": "2026-04-10T08:00:00",
+        "launched_at": None,
     },
 ]
 
@@ -388,117 +420,174 @@ elif page == "KPIs":
 # ────────────────────────────────────────────────────────────────────────────────
 elif page == "Campaign Editor":
     st.title("Campaign Editor")
-    st.caption("Manage upgrade campaigns and global test parameters")
+    st.caption("Create and manage upgrade campaigns per segment")
 
-    # FIX 8: wire real API call with mock fallback
+    # Wire real API call with mock fallback
     raw_campaigns = api_get("/api/campaigns")
     campaigns_data = raw_campaigns if raw_campaigns else CAMPAIGNS
     if raw_campaigns is None:
         st.caption("⚠️ Using demo data — backend unavailable")
 
-    # FIX 6: sorted status options for deterministic ordering
-    status_options = ["All"] + sorted({c["status"] for c in campaigns_data})
-    camp_status_filter = st.selectbox(
-        "Filter campaigns by status",
-        status_options,
-        key="camp_list_filter",
-    )
-    filtered_campaigns = campaigns_data if camp_status_filter == "All" else [
-        c for c in campaigns_data if c["status"] == camp_status_filter
-    ]
+    raw_gp = api_get("/api/global-params")
+    global_params = raw_gp if raw_gp else GLOBAL_PARAMS
+    if raw_gp is None:
+        pass  # silent fallback — global params section handles its own display
 
-    left_col, right_col = st.columns([1, 2])
+    # ── helpers ──────────────────────────────────────────────────────────────
+    CHANNEL_ICONS   = {"in-app": "💬", "email": "📧", "push": "🔔"}
+    STATUS_BADGES   = {"active": "🟢 Active", "draft": "⚪ Draft", "paused": "⏸️ Paused"}
+    TRIGGER_LABELS  = {
+        "paywall_hit":    "Paywall Hit",
+        "export_attempt": "Export Attempt",
+        "session_start":  "Session Start",
+    }
+    channel_options = ["in-app", "email", "push"]
+    trigger_options = ["paywall_hit", "export_attempt", "session_start"]
 
-    with left_col:
+    def _msg_body(campaign: dict) -> str:
+        """Extract message body from CampaignOut — real API nests it in active_message."""
+        am = campaign.get("active_message")
+        if isinstance(am, dict):
+            return am.get("body", "")
+        return campaign.get("message", "")
+
+    # ── layout ───────────────────────────────────────────────────────────────
+    list_col, edit_col = st.columns([2, 3], gap="large")
+
+    with list_col:
         st.subheader("Campaigns")
-        if not filtered_campaigns:
+
+        # Status filter
+        status_opts = ["All"] + sorted({c["status"] for c in campaigns_data})
+        status_filter = st.selectbox("Filter by status", status_opts, key="camp_status_filter")
+        filtered = campaigns_data if status_filter == "All" else [
+            c for c in campaigns_data if c["status"] == status_filter
+        ]
+
+        if not filtered:
             st.info("No campaigns match the selected filter.")
-            selected_c = campaigns_data[0]
+            selected_c = campaigns_data[0] if campaigns_data else {}
         else:
-            campaign_names = [f'#{c["campaign_id"]} — {c["name"]}' for c in filtered_campaigns]
-            selected_idx = st.selectbox(
+            # Campaign cards — clickable via selectbox
+            def _card_label(c: dict) -> str:
+                seg_label = c.get("segment_label") or c.get("segment_name", "").title()
+                status    = STATUS_BADGES.get(c.get("status", "draft"), c.get("status", ""))
+                channel   = CHANNEL_ICONS.get(c.get("channel", ""), "")
+                return f"{channel} {seg_label}  ·  {status}"
+
+            selected_idx = st.radio(
                 "Select campaign",
-                range(len(filtered_campaigns)),
-                format_func=lambda i: campaign_names[i],
-                key="campaign_select",
+                range(len(filtered)),
+                format_func=lambda i: _card_label(filtered[i]),
+                key="campaign_radio",
+                label_visibility="collapsed",
             )
-            selected_c = filtered_campaigns[selected_idx]
+            selected_c = filtered[selected_idx]
 
+            # Mini-preview card for the selected campaign
+            c = selected_c
+            seg_color = c.get("color_hex", "#9ca3af")
+            st.markdown(
+                f"""
+                <div style="border-left: 4px solid {seg_color}; padding: 10px 14px;
+                            background: #f9fafb; border-radius: 6px; margin-top: 8px;">
+                  <b style="color:{seg_color}">
+                    {c.get("segment_label") or c.get("segment_name","").title()}
+                  </b><br>
+                  <small>Trigger: {TRIGGER_LABELS.get(c.get("trigger_event",""), c.get("trigger_event","—"))}</small><br>
+                  <small>Channel: {CHANNEL_ICONS.get(c.get("channel",""), "")} {c.get("channel","—").upper()}</small>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    with edit_col:
         c = selected_c
-        st.write(f"**Channel:** {c['channel'].upper()}")
-        # FIX 2e: read trigger_event not trigger
-        st.write(f"**Trigger:** {c.get('trigger_event', '—')}")
-        status_color = {"active": "✅", "draft": "⚪", "paused": "⏸️"}
-        st.write(f"**Status:** {status_color.get(c['status'], '•')} {c['status'].title()}")
+        seg_label = c.get("segment_label") or c.get("segment_name", "").title()
+        seg_color = c.get("color_hex", "#9ca3af")
 
-    with right_col:
-        st.subheader("Edit Campaign")
-        new_name = st.text_input("Campaign name", value=c["name"], key="camp_name")
-        # message body may come from active_message.body when real API is used
-        msg_value = c.get("message") or (c.get("active_message") or {}).get("body", "")
-        new_msg  = st.text_area(
+        st.subheader(f"Edit — {seg_label}")
+        st.markdown(
+            f'<span style="background:{seg_color};color:#fff;padding:2px 10px;'
+            f'border-radius:12px;font-size:0.8rem;">'
+            f'{STATUS_BADGES.get(c.get("status","draft"), c.get("status",""))}</span>',
+            unsafe_allow_html=True,
+        )
+        st.write("")  # spacer
+
+        # Message body
+        msg_value = _msg_body(c)
+        new_msg = st.text_area(
             "Message template",
             value=msg_value,
-            height=100,
+            height=110,
             key="camp_msg",
-            help="Will call PUT /api/campaigns/{id}/message in M4.",
-        )
-        ch1, ch2 = st.columns(2)
-
-        # FIX 4: safe .index() with fallback to prevent ValueError crash
-        channel_options = ["in-app", "email", "push"]
-        channel_idx = channel_options.index(c.get("channel", "in-app")) if c.get("channel") in channel_options else 0
-        new_channel = ch1.selectbox(
-            "Channel",
-            channel_options,
-            index=channel_idx,
-            key="camp_channel",
+            help="Calls PUT /api/campaigns/{id}/message",
         )
 
-        # FIX 4: use trigger_event, safe fallback
-        trigger_options = ["paywall_hit", "export_attempt", "session_start"]
-        trigger_idx = trigger_options.index(c.get("trigger_event", "paywall_hit")) if c.get("trigger_event") in trigger_options else 0
-        new_trigger = ch2.selectbox(
-            "Trigger",
-            trigger_options,
-            index=trigger_idx,
-            key="camp_trigger",
-        )
-        d1, d2 = st.columns(2)
-        d1.number_input("Discount %",           min_value=0,  max_value=100, value=c.get("discount_pct", 20),       key="camp_discount")
-        d2.number_input("Test duration (days)", min_value=1,  max_value=90,  value=c.get("test_duration_days", 14), key="camp_duration")
+        r1, r2 = st.columns(2)
+        channel_idx  = channel_options.index(c["channel"]) if c.get("channel") in channel_options else 0
+        trigger_idx  = trigger_options.index(c["trigger_event"]) if c.get("trigger_event") in trigger_options else 0
+        new_channel  = r1.selectbox("Channel",  channel_options, index=channel_idx,  key="camp_channel",
+                                    format_func=lambda x: f"{CHANNEL_ICONS.get(x,'')} {x.upper()}")
+        new_trigger  = r2.selectbox("Trigger",  trigger_options, index=trigger_idx,  key="camp_trigger",
+                                    format_func=lambda x: TRIGGER_LABELS.get(x, x))
+
         st.divider()
         b1, b2, b3 = st.columns(3)
-        if b1.button("🚀 Launch campaign", key="btn_launch", type="primary"):
-            result = api_post(f"/api/campaigns/{c['campaign_id']}/launch", {})
+        campaign_id = c.get("campaign_id", 1)
+
+        if b1.button("🚀 Launch", key="btn_launch", type="primary", use_container_width=True):
+            # First save the message, then launch
+            api_put(f"/api/campaigns/{campaign_id}/message", {"body": new_msg})
+            result = api_post(f"/api/campaigns/{campaign_id}/launch", {})
             if result:
-                st.success(f"Campaign \"{new_name}\" launched.")
+                st.success(f"✅ Campaign for **{seg_label}** launched!")
             else:
-                st.success(f"Campaign \"{new_name}\" launched (demo mode — backend unavailable).")
-        if b2.button("💾 Save changes", key="btn_save"):
-            result = api_put(f"/api/campaigns/{c['campaign_id']}", {"channel": new_channel, "trigger_event": new_trigger})
+                st.success(f"✅ Campaign for **{seg_label}** launched (demo mode).")
+
+        if b2.button("💾 Save", key="btn_save", use_container_width=True):
+            result = api_put(
+                f"/api/campaigns/{campaign_id}/message",
+                {"body": new_msg},
+            )
             if result:
-                st.info("Changes saved.")
+                st.info("Message saved.")
             else:
-                st.info("Changes saved (demo mode — backend unavailable).")
-        if b3.button("↩ Reset to draft", key="btn_reset"):
-            result = api_post(f"/api/campaigns/{c['campaign_id']}/reset", {})
+                st.info("Message saved (demo mode).")
+
+        if b3.button("↩ Reset", key="btn_reset", use_container_width=True):
+            result = api_post(f"/api/campaigns/{campaign_id}/reset", {})
             if result:
                 st.warning("Campaign reset to draft.")
             else:
-                st.warning("Campaign reset (demo mode — backend unavailable).")
+                st.warning("Campaign reset to draft (demo mode).")
 
+    # ── Global Parameters ─────────────────────────────────────────────────────
     st.divider()
     st.subheader("Global Parameters")
-    st.caption("Shared defaults applied to all campaigns unless overridden")
+    st.caption("Shared A/B test defaults applied across all campaigns")
+
     gp1, gp2, gp3, gp4 = st.columns(4)
-    gp1.number_input("Test Duration (days)",    value=GLOBAL_PARAMS["test_duration_days"],     min_value=1,  max_value=90,  key="gp_dur")
-    gp2.number_input("Discount %",              value=GLOBAL_PARAMS["discount_pct"],           min_value=0,  max_value=100, key="gp_disc")
-    gp3.number_input("Min Sample Size",         value=GLOBAL_PARAMS["min_sample_size"],        min_value=10,               key="gp_sample")
-    gp4.number_input("Significance Threshold",  value=GLOBAL_PARAMS["significance_threshold"], min_value=0.0, max_value=1.0, step=0.01, key="gp_sig")
-    if st.button("Save global params", key="btn_gp_save"):
-        result = api_put("/api/global-params/significance_threshold", {"value": str(GLOBAL_PARAMS["significance_threshold"])})
-        if result:
+    gp_dur    = gp1.number_input("Test Duration (days)",   value=int(global_params.get("test_duration_days", 14)),   min_value=1,  max_value=90,  key="gp_dur")
+    gp_disc   = gp2.number_input("Discount %",             value=int(global_params.get("discount_pct", 20)),         min_value=0,  max_value=100, key="gp_disc")
+    gp_sample = gp3.number_input("Min Sample Size",        value=int(global_params.get("min_sample_size", 50)),      min_value=10,               key="gp_sample")
+    gp_sig    = gp4.number_input("Significance Threshold", value=float(global_params.get("significance_threshold", 0.05)),
+                                  min_value=0.0, max_value=1.0, step=0.01, format="%.2f", key="gp_sig")
+
+    if st.button("💾 Save global params", key="btn_gp_save"):
+        params_to_save = {
+            "test_duration_days":    gp_dur,
+            "discount_pct":          gp_disc,
+            "min_sample_size":       gp_sample,
+            "significance_threshold": gp_sig,
+        }
+        saved_any = False
+        for key, val in params_to_save.items():
+            r = api_put(f"/api/global-params/{key}", {"value": str(val)})
+            if r:
+                saved_any = True
+        if saved_any:
             st.success("Global params saved.")
         else:
             st.success("Global params saved (demo mode — backend unavailable).")
