@@ -1,790 +1,454 @@
-"""Pulse Dashboard â Streamlit frontend."""
-import os
-import requests
-import pandas as pd
+"""Pulse Dashboard â Streamlit frontend (Milestone 3: mock data).
+
+Screens match PM endpoint specs from issues #67 and #68:
+  Segments   â /api/segments/counts + /api/segments/behavioral-averages
+  A/B Tests  â /api/ab-tests/summary + /api/ab-tests/comparison
+  KPIs       â /api/kpis
+  Campaign   â /api/campaigns/* + /api/global-params/*
+  User Demo  â /api/demo/message/{segment_name} + /api/demo/respond
+
+Issue #91: each screen has data tables, filters, charts, forms, and model results.
+"""
 import streamlit as st
+import pandas as pd
 
-API = os.getenv("API_URL", "http://back:8000")
+st.set_page_config(page_title="Pulse", layout="wide")
 
-st.set_page_config(page_title="Pulse", page_icon=None, layout="wide")
+# ââ Mock data ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Field names match real API shapes; wiring in M4 is a one-line change.
 
-# ââ Global styles âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+# /api/segments/counts
+SEGMENT_COUNTS = [
+    {"segment_name": "power",   "user_count": 124},
+    {"segment_name": "growing", "user_count": 158},
+    {"segment_name": "casual",  "user_count":  98},
+    {"segment_name": "dormant", "user_count":  43},
+]
 
-html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
+# /api/segments/behavioral-averages
+SEGMENT_BEHAVIORAL = [
+    {"segment_name": "power",   "avg_sessions_per_week": 8.4, "avg_exports": 9.2, "avg_paywall_hits": 6.8},
+    {"segment_name": "growing", "avg_sessions_per_week": 5.1, "avg_exports": 4.3, "avg_paywall_hits": 2.1},
+    {"segment_name": "casual",  "avg_sessions_per_week": 2.3, "avg_exports": 1.8, "avg_paywall_hits": 0.6},
+    {"segment_name": "dormant", "avg_sessions_per_week": 0.4, "avg_exports": 0.2, "avg_paywall_hits": 0.0},
+]
 
-/* ââ Force all text dark globally ââ */
-p, span, div, li,
-[data-testid="stMarkdownContainer"] p,
-[data-testid="stMarkdownContainer"] span,
-[data-testid="stText"],
-[data-testid="stCaption"] p,
-[data-testid="stCaption"],
-.stCaption,
-.stSelectbox label,
-.stTextArea label,
-.stNumberInput label,
-.stRadio label,
-.stRadio div,
-.stCheckbox label,
-.stSelectbox div[data-baseweb="select"] span,
-[data-baseweb="select"] span,
-[data-testid="stWidgetLabel"],
-[data-testid="stWidgetLabel"] p,
-[data-testid="stWidgetLabel"] label {
-    color: #1f2937 !important;
+# /api/ab-tests/summary
+AB_SUMMARY = [
+    {"segment_name": "power",   "control_rate": 0.062, "treatment_rate": 0.091, "lift_pct": 46.8, "p_value": 0.012, "significance": "significant",     "status": "running"},
+    {"segment_name": "growing", "control_rate": 0.041, "treatment_rate": 0.057, "lift_pct": 39.0, "p_value": 0.034, "significance": "significant",     "status": "running"},
+    {"segment_name": "casual",  "control_rate": 0.018, "treatment_rate": 0.022, "lift_pct": 22.2, "p_value": 0.210, "significance": "not significant", "status": "running"},
+    {"segment_name": "dormant", "control_rate": 0.005, "treatment_rate": 0.006, "lift_pct": 20.0, "p_value": 0.480, "significance": "not significant", "status": "pending"},
+]
+
+# /api/ab-tests/comparison
+AB_COMPARISON = [
+    {"segment_name": "power",   "variant": "control",   "conversion_rate": 0.062, "avg_sessions": 8.1, "avg_exports": 8.8, "sample_size": 62},
+    {"segment_name": "power",   "variant": "treatment", "conversion_rate": 0.091, "avg_sessions": 8.9, "avg_exports": 9.6, "sample_size": 62},
+    {"segment_name": "growing", "variant": "control",   "conversion_rate": 0.041, "avg_sessions": 5.0, "avg_exports": 4.1, "sample_size": 79},
+    {"segment_name": "growing", "variant": "treatment", "conversion_rate": 0.057, "avg_sessions": 5.3, "avg_exports": 4.6, "sample_size": 79},
+    {"segment_name": "casual",  "variant": "control",   "conversion_rate": 0.018, "avg_sessions": 2.2, "avg_exports": 1.7, "sample_size": 49},
+    {"segment_name": "casual",  "variant": "treatment", "conversion_rate": 0.022, "avg_sessions": 2.4, "avg_exports": 1.9, "sample_size": 49},
+    {"segment_name": "dormant", "variant": "control",   "conversion_rate": 0.005, "avg_sessions": 0.3, "avg_exports": 0.2, "sample_size": 21},
+    {"segment_name": "dormant", "variant": "treatment", "conversion_rate": 0.006, "avg_sessions": 0.4, "avg_exports": 0.2, "sample_size": 22},
+]
+
+# /api/kpis
+KPIS = {
+    "overall_conversion_rate":      0.054,
+    "avg_time_to_convert_days":     6.2,
+    "retention_30d":                0.83,
+    "notification_engagement_rate": 0.41,
 }
 
-/* Sidebar nav items */
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] p,
-[data-testid="stSidebar"] span,
-[data-testid="stSidebar"] div {
-    color: #1f2937 !important;
+# /api/campaigns
+CAMPAIGNS = [
+    {
+        "campaign_id": 1, "name": "Power User Upgrade",
+        "message": "You're a power user! Unlock unlimited exports with Pro.",
+        "channel": "in-app", "trigger": "paywall_hit", "status": "active",
+        "discount_pct": 20, "test_duration_days": 14,
+    },
+    {
+        "campaign_id": 2, "name": "Growing User Nudge",
+        "message": "You're growing fast â go Pro to remove all limits.",
+        "channel": "email", "trigger": "session_threshold", "status": "draft",
+        "discount_pct": 15, "test_duration_days": 14,
+    },
+    {
+        "campaign_id": 3, "name": "Re-engage Dormant",
+        "message": "We miss you! Come back and see what's new in Pulse.",
+        "channel": "push", "trigger": "inactivity_14d", "status": "paused",
+        "discount_pct": 30, "test_duration_days": 7,
+    },
+]
+
+# /api/global-params
+GLOBAL_PARAMS = {
+    "test_duration_days": 14,
+    "discount_pct": 20,
+    "min_sample_size": 50,
+    "significance_threshold": 0.05,
 }
 
-/* Warning / info / success boxes keep their colours */
-[data-testid="stAlert"] p { color: inherit !important; }
-
-[data-testid="stAppViewContainer"] { background: #f0f2f5; }
-[data-testid="stSidebar"] {
-    background: #ffffff !important;
-    border-right: 1px solid rgba(0,0,0,0.07);
-}
-[data-testid="stSidebar"] * { font-family: 'DM Sans', sans-serif !important; }
-
-/* Hide default streamlit chrome */
-#MainMenu, footer, header { visibility: hidden; }
-[data-testid="stToolbar"] { display: none; }
-
-/* Page title */
-.pulse-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 2px;
-}
-.pulse-subtitle {
-    font-size: 12px;
-    color: #6b7280;
-    margin-bottom: 20px;
+# /api/demo/message/{segment_name}
+DEMO_MESSAGES = {
+    "power":   "You're a power user! Upgrade to Pro for unlimited exports and priority support.",
+    "growing": "You're on a roll â go Pro to remove all export limits and unlock advanced filters.",
+    "casual":  "Enjoying Pulse? Pro gives you 5x more exports and premium templates.",
+    "dormant": "Welcome back! Upgrade to Pro today and get 30% off for the next 48 hours.",
 }
 
-/* Segment color dots */
-.dot-power   { display:inline-block; width:8px; height:8px; border-radius:50%; background:#00b87a; margin-right:6px; }
-.dot-growing { display:inline-block; width:8px; height:8px; border-radius:50%; background:#3b82f6; margin-right:6px; }
-.dot-casual  { display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; margin-right:6px; }
-.dot-dormant { display:inline-block; width:8px; height:8px; border-radius:50%; background:#9ca3af; margin-right:6px; }
+# /api/demo/respond  (cumulative mock response log)
+DEMO_RESPONSES = [
+    {"segment_name": "power",   "response": "accept",  "count": 38},
+    {"segment_name": "power",   "response": "dismiss", "count": 24},
+    {"segment_name": "growing", "response": "accept",  "count": 29},
+    {"segment_name": "growing", "response": "dismiss", "count": 41},
+    {"segment_name": "casual",  "response": "accept",  "count": 11},
+    {"segment_name": "casual",  "response": "dismiss", "count": 52},
+    {"segment_name": "dormant", "response": "accept",  "count":  3},
+    {"segment_name": "dormant", "response": "dismiss", "count": 18},
+]
 
-/* KPI card */
-.kpi-card {
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 12px;
-    padding: 18px 20px;
-    height: 100%;
-}
-.kpi-card-label {
-    font-size: 10px;
-    font-weight: 500;
-    color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-bottom: 8px;
-}
-.kpi-card-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 4px;
-}
-.kpi-card-trend { font-size: 11px; color: #00b87a; }
-
-/* Panel */
-.panel {
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 12px;
-    padding: 18px 20px;
-    margin-bottom: 14px;
-}
-.panel-title {
-    font-size: 11px;
-    font-weight: 600;
-    color: #1f2937;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 14px;
-    display: block;
-}
-
-/* Badge */
-.badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 99px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
-}
-.badge-running  { background: #dcfce7; color: #15803d; }
-.badge-draft    { background: #e5e7eb; color: #374151; }
-.badge-pending  { background: #fef3c7; color: #92400e; }
-.badge-sig      { background: #dcfce7; color: #15803d; }
-.badge-border   { background: #fef3c7; color: #92400e; }
-.badge-insig    { background: #e5e7eb; color: #374151; }
-
-/* Segment tag */
-.seg-tag {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 99px;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-.seg-power   { background: rgba(0,184,122,0.1);  color: #00b87a; }
-.seg-growing { background: rgba(59,130,246,0.1);  color: #3b82f6; }
-.seg-casual  { background: rgba(245,158,11,0.1);  color: #d97706; }
-.seg-dormant { background: rgba(156,163,175,0.15); color: #6b7280; }
-
-/* Streamlit metric overrides */
-[data-testid="stMetric"] {
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 12px;
-    padding: 14px 18px;
-}
-[data-testid="stMetric"] label {
-    font-size: 10px !important;
-    font-weight: 500 !important;
-    color: #4b5563 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-}
-[data-testid="stMetricValue"] {
-    font-family: 'Syne', sans-serif !important;
-    font-size: 24px !important;
-    color: #111827 !important;
-}
-
-/* Sidebar brand */
-.sidebar-brand {
-    font-family: 'Syne', sans-serif;
-    font-size: 20px;
-    font-weight: 800;
-    color: #00b87a;
-    padding: 8px 0 16px;
-    letter-spacing: -0.5px;
-}
-.sidebar-section {
-    font-size: 9px;
-    font-weight: 500;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: #6b7280;
-    margin: 12px 0 4px;
-}
-
-/* Table */
-.pulse-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-}
-.pulse-table th {
-    font-size: 9px;
-    font-weight: 600;
-    color: #4b5563;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    padding: 8px 12px;
-    border-bottom: 1px solid rgba(0,0,0,0.07);
-    text-align: left;
-}
-.pulse-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    color: #1f2937;
-    font-size: 12px;
-}
-.pulse-table tr:last-child td { border-bottom: none; }
-.pulse-table tr:hover td { background: #f9fafb; }
-
-/* Input overrides */
-[data-testid="stTextArea"] textarea,
-[data-testid="stNumberInput"] input {
-    border-radius: 8px !important;
-    border: 1px solid rgba(0,0,0,0.13) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 12px !important;
-}
-
-/* Button overrides */
-[data-testid="stButton"] > button {
-    border-radius: 8px !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 12px !important;
-    font-weight: 500 !important;
-}
-
-/* Divider */
-hr { border: none; border-top: 1px solid rgba(0,0,0,0.07); margin: 18px 0; }
-
-/* Preview box */
-.prev-box {
-    background: #f9fafb;
-    border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 12px;
-    color: #374151;
-    line-height: 1.6;
-    margin: 6px 0 14px;
-}
-
-/* Log entry */
-.log-entry {
-    font-size: 11.5px;
-    color: #374151;
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-
-# ── API helpers ──────────────────────────────────────────────
-def api_get(path):
-    try:
-        r = requests.get(f"{API}{path}", timeout=5)
-        r.raise_for_status()
-        return r.json()
-    except Exception as e:
-        st.warning(f"Could not load data from {path}: {e}")
-        return None
-
-def api_put(path, data):
-    try:
-        r = requests.put(f"{API}{path}", json=data, timeout=5)
-        r.raise_for_status()
-        return r.json()
-    except Exception as e:
-        st.error(f"Save failed: {e}")
-        return None
-
-def api_post(path, data=None):
-    try:
-        r = requests.post(f"{API}{path}", json=data or {}, timeout=5)
-        r.raise_for_status()
-        return r.json()
-    except Exception as e:
-        st.error(f"Action failed: {e}")
-        return None
-
-def api_delete(path):
-    try:
-        r = requests.delete(f"{API}{path}", timeout=5)
-        r.raise_for_status()
-        return r.json()
-    except Exception as e:
-        st.error(f"Reset failed: {e}")
-        return None
-
-
-# ── Reusable UI components ─────────────────────────────────────────────────
-def page_header(title: str, subtitle: str) -> None:
-    """Render the standard page title + subtitle banner."""
-    st.markdown(f'<div class="pulse-title">{title}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="pulse-subtitle">{subtitle}</div>', unsafe_allow_html=True)
-
-
-def panel_header(title: str) -> None:
-    """Open a .panel div with a panel-title label."""
-    st.markdown(
-        f'<div class="panel"><span class="panel-title">{title}</span>',
-        unsafe_allow_html=True,
-    )
-
-
-def panel_close() -> None:
-    """Close the current .panel div."""
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-def kpi_card(col, label: str, value: str, trend: str = "", color: str = "") -> None:
-    """Render a KPI metric card into the given Streamlit column."""
-    color_style = f'style="color:{color}"' if color else ""
-    trend_html = f'<div class="kpi-card-trend">{trend}</div>' if trend else ""
-    col.markdown(
-        f"""
-        <div class="kpi-card">
-            <div class="kpi-card-label">{label}</div>
-            <div class="kpi-card-value" {color_style}>{value}</div>
-            {trend_html}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def seg_tag(seg: str, label: str) -> str:
-    """Return an HTML segment-color tag span."""
-    return f'<span class="seg-tag seg-{seg}">{label}</span>'
-
-
-def status_badge(status: str) -> tuple:
-    """Return (css_class, display_label) for a campaign or test status string."""
-    s = status.lower()
-    if "not" in s:
-        return ("badge-insig", "Not significant")
-    if "borderline" in s:
-        return ("badge-border", "Borderline")
-    if "significant" in s:
-        return ("badge-sig", "Significant")
-    if s == "running":
-        return ("badge-running", "running")
-    if s == "draft":
-        return ("badge-draft", "draft")
-    return ("badge-pending", status)
-
-
-def render_preview(
-    template: str,
-    price: int,
-    discount: int,
-    tmpl_count: int,
-    export_count: int = 9,
-    paywall_hits: int = 7,
-) -> None:
-    """Substitute template variables and render the message preview box."""
-    preview = (
-        template
-        .replace("{{price}}", str(price))
-        .replace("{{discount}}", str(discount))
-        .replace("{{template_count}}", str(tmpl_count))
-        .replace("{{export_count}}", str(export_count))
-        .replace("{{paywall_hits}}", str(paywall_hits))
-    )
-    st.markdown(f'<div class="prev-box">{preview}</div>', unsafe_allow_html=True)
-
-
-@st.cache_data(ttl=5)
-def get_global_params() -> dict:
-    """Fetch global params once per 5 s and return a dict keyed by param key."""
-    raw = api_get("/api/global-params") or []
-    return {p["key"]: p for p in raw}
-
-
-COLORS = {
-    "power":   "#00b87a",
-    "growing": "#3b82f6",
-    "casual":  "#f59e0b",
-    "dormant": "#9ca3af",
-}
-
-
-# ── Sidebar ──────────────────────────────────────────────────────────────────────────────
+# ââ Sidebar navigation âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 with st.sidebar:
-    st.markdown('<div class="sidebar-brand">pulse.</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-section">Analytics</div>', unsafe_allow_html=True)
+    st.title("Pulse")
+    st.caption("Analytics Dashboard")
+    st.divider()
     page = st.radio(
-        "nav",
-        ["Segments", "A/B Tests", "KPIs", "User Demo", "Campaign Editor"],
+        "Navigate",
+        ["Segments", "A/B Tests", "KPIs", "Campaign Editor", "User Demo"],
         label_visibility="collapsed",
     )
+    st.divider()
+    st.caption("Milestone 3 â mock data")
 
-
-# ────────────────────────────────────────────────────────────────────────────────
-# SEGMENTS
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  SEGMENTS  â  /api/segments/counts  +  /api/segments/behavioral-averages
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 if page == "Segments":
-    page_header("Segments", "Free-user behavioral clustering — 4 segments")
+    st.title("Segments")
+    st.caption("Free-user behavioural clustering â 4 segments")
 
-    counts = api_get("/api/segments/counts") or []
-    avgs   = api_get("/api/segments/behavioral-averages") or []
+    # â Filter bar âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    all_seg_names = [s["segment_name"].title() for s in SEGMENT_COUNTS]
+    seg_filter_options = st.multiselect(
+        "Filter segments",
+        options=all_seg_names,
+        default=all_seg_names,
+        key="seg_multi_filter",
+    )
+    if not seg_filter_options:
+        seg_filter_options = all_seg_names  # show all if nothing selected
 
-    # KPI cards
-    if counts:
-        cols = st.columns(len(counts))
-        for col, seg in zip(cols, counts):
-            name  = seg.get("segment_name", "")
-            label = seg.get("label", name.title())
-            count = seg.get("user_count", 0)
-            color = COLORS.get(name, "#111827")
-            kpi_card(col, label, f"{count:,}", color=color)
+    # Section 1: User counts per segment  (/api/segments/counts)
+    st.subheader("User Counts by Segment")
+    df_counts = pd.DataFrame(SEGMENT_COUNTS)
+    df_counts["segment_name"] = df_counts["segment_name"].str.title()
+    df_counts = df_counts[df_counts["segment_name"].isin(seg_filter_options)]
+    cols = st.columns(len(df_counts) if len(df_counts) > 0 else 1)
+    for i, (_, row) in enumerate(df_counts.iterrows()):
+        cols[i].metric(row["segment_name"], f'{row["user_count"]:,} users')
+    if not df_counts.empty:
+        st.bar_chart(df_counts.set_index("segment_name")["user_count"])
+    st.divider()
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    # Section 2: Behavioral averages  (/api/segments/behavioral-averages)
+    st.subheader("Behavioral Averages by Segment")
+    df_beh = pd.DataFrame(SEGMENT_BEHAVIORAL)
+    df_beh["segment_name"] = df_beh["segment_name"].str.title()
+    df_beh = df_beh[df_beh["segment_name"].isin(seg_filter_options)]
+    st.dataframe(
+        df_beh.rename(columns={
+            "segment_name":          "Segment",
+            "avg_sessions_per_week": "Avg Sessions / Week",
+            "avg_exports":           "Avg Exports",
+            "avg_paywall_hits":      "Avg Paywall Hits",
+        }),
+        use_container_width=True,
+        hide_index=True,
+    )
+    if not df_beh.empty:
+        c1, c2, c3 = st.columns(3)
+        c1.bar_chart(df_beh.set_index("segment_name")["avg_sessions_per_week"])
+        c1.caption("Avg Sessions / Week")
+        c2.bar_chart(df_beh.set_index("segment_name")["avg_exports"])
+        c2.caption("Avg Exports")
+        c3.bar_chart(df_beh.set_index("segment_name")["avg_paywall_hits"])
+        c3.caption("Avg Paywall Hits")
 
-    # Bar charts
-    if avgs:
-        df = pd.DataFrame(avgs)
-        col1, col2 = st.columns(2)
-
-        with col1:
-            panel_header("Exports per week")
-            if "avg_exports" in df.columns:
-                chart_df = df.set_index("segment_name")[["avg_exports"]].rename(columns={"avg_exports": "Avg exports"})
-                st.bar_chart(chart_df, color="#00b87a", height=160)
-            panel_close()
-
-        with col2:
-            panel_header("Paywall hits per week")
-            if "avg_paywall_hits" in df.columns:
-                chart_df = df.set_index("segment_name")[["avg_paywall_hits"]].rename(columns={"avg_paywall_hits": "Avg paywall hits"})
-                st.bar_chart(chart_df, color="#3b82f6", height=160)
-            panel_close()
-
-        # Breakdown table
-        count_map = {s["segment_name"]: s.get("user_count", 0) for s in counts}
-        rows_html = ""
-        for _, row in df.iterrows():
-            seg_name = row.get("segment_name", "")
-            rows_html += f"""
-            <tr>
-                <td>{seg_tag(seg_name, seg_name.title())}</td>
-                <td>{count_map.get(seg_name, '—'):,}</td>
-                <td>{row.get('avg_sessions_per_week', '—')}</td>
-                <td>{row.get('avg_exports', '—')}</td>
-                <td>{row.get('avg_paywall_hits', '—')}</td>
-                <td>{row.get('avg_synonym_depth', '—')}</td>
-            </tr>"""
-
-        st.markdown(f"""
-            <div class="panel">
-                <span class="panel-title">Segment breakdown</span>
-                <table class="pulse-table">
-                    <thead><tr>
-                        <th>Segment</th><th>Users</th>
-                        <th>Avg sessions / wk</th><th>Avg exports / wk</th>
-                        <th>Avg paywall hits / wk</th><th>Avg synonym depth</th>
-                    </tr></thead>
-                    <tbody>{rows_html}</tbody>
-                </table>
-            </div>
-        """, unsafe_allow_html=True)
-
-
-# ────────────────────────────────────────────────────────────────────────────────
-# A/B TESTS
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  A/B TESTS  â  /api/ab-tests/summary  +  /api/ab-tests/comparison
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 elif page == "A/B Tests":
-    page_header("A/B Tests", "One test per segment — control vs treatment message")
+    st.title("A/B Tests")
+    st.caption("Control vs. treatment conversion performance per segment")
 
-    tests = api_get("/api/ab-tests/summary") or []
+    tab_summary, tab_comparison = st.tabs(["Summary", "Variant Comparison"])
 
-    if not tests:
-        st.info("No A/B tests found. Launch a campaign in the Campaign Editor first.")
-    else:
-        for t in tests:
-            seg    = t.get("segment_name", "")
-            label  = t.get("segment_label", seg.title())
-            status = t.get("status", "pending")
-            color  = COLORS.get(seg, "#111")
-            badge, badge_label = status_badge(status)
+    # Tab 1: Summary  (/api/ab-tests/summary)
+    with tab_summary:
+        st.subheader("Test Summary â model results")
 
-            ctrl_rate  = t.get("control_rate")
-            treat_rate = t.get("treatment_rate")
-            lift       = t.get("lift_pct")
-            pval       = t.get("p_value")
-            sig        = t.get("significance", "")
+        # Filter bar
+        f1, f2 = st.columns([1, 1])
+        sig_filter = f1.selectbox(
+            "Filter by significance",
+            ["All", "Significant only", "Not significant only"],
+            key="ab_sig_filter",
+        )
+        status_filter = f2.selectbox(
+            "Filter by status",
+            ["All", "running", "pending", "complete"],
+            key="ab_status_filter",
+        )
 
-            ctrl  = f"{ctrl_rate*100:.1f}%"   if ctrl_rate  else "—"
-            treat = f"{treat_rate*100:.1f}%"  if treat_rate else "—"
-            lift_str = f"+{lift:.0f}%"        if lift       else "—"
-            pval_str = f"{pval:.3f}"          if pval       else "—"
+        df_sum = pd.DataFrame(AB_SUMMARY)
+        if sig_filter == "Significant only":
+            df_sum = df_sum[df_sum["significance"] == "significant"]
+        elif sig_filter == "Not significant only":
+            df_sum = df_sum[df_sum["significance"] == "not significant"]
+        if status_filter != "All":
+            df_sum = df_sum[df_sum["status"] == status_filter]
 
-            sig_badge, sig_label = status_badge(sig or "pending")
-            lift_color = "#00b87a" if lift else "#9ca3af"
+        running = df_sum[df_sum["status"] == "running"].shape[0]
+        sig     = df_sum[df_sum["significance"] == "significant"].shape[0]
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Tests in view", len(df_sum))
+        m2.metric("Significant results", sig)
+        m3.metric("Tests running", running)
+        st.divider()
 
-            footer_html = (
-                f'<span class="badge {sig_badge}">{sig_label}</span>'
-                f'&nbsp;&nbsp;p = {pval_str}'
+        # Comparison table with lift and p-value columns
+        if not df_sum.empty:
+            st.dataframe(
+                df_sum.rename(columns={
+                    "segment_name":   "Segment",
+                    "control_rate":   "Control Rate",
+                    "treatment_rate": "Treatment Rate",
+                    "lift_pct":       "Lift %",
+                    "p_value":        "p-value",
+                    "significance":   "Significance",
+                    "status":         "Status",
+                }).assign(**{
+                    "Control Rate":   lambda d: d["Control Rate"].map(lambda x: f"{x:.1%}"),
+                    "Treatment Rate": lambda d: d["Treatment Rate"].map(lambda x: f"{x:.1%}"),
+                    "Lift %":         lambda d: d["Lift %"].map(lambda x: f"+{x:.1f}%"),
+                }),
+                use_container_width=True,
+                hide_index=True,
             )
+        else:
+            st.info("No results match the selected filters.")
 
-            st.markdown(f"""
-                <div class="panel">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-                        {seg_tag(seg, label)}
-                        <span class="badge {badge}">{badge_label}</span>
-                    </div>
-                    <div style="display:flex;gap:24px;margin-bottom:10px">
-                        <div><div class="kpi-card-label">Control</div><div class="kpi-card-value" style="font-size:20px">{ctrl}</div></div>
-                        <div><div class="kpi-card-label">Treatment</div><div class="kpi-card-value" style="font-size:20px;color:{lift_color}">{treat}</div></div>
-                        <div><div class="kpi-card-label">Lift</div><div class="kpi-card-value" style="font-size:20px;color:{lift_color}">{lift_str}</div></div>
-                    </div>
-                    <div style="font-size:11px;color:#6b7280">{footer_html}</div>
-                </div>
-            """, unsafe_allow_html=True)
+    # Tab 2: Variant Comparison  (/api/ab-tests/comparison)
+    with tab_comparison:
+        st.subheader("Side-by-Side Variant Comparison")
+        seg_filter = st.selectbox(
+            "Filter by segment",
+            ["All"] + [s["segment_name"].title() for s in SEGMENT_COUNTS],
+            key="ab_seg_filter",
+        )
+        df_cmp = pd.DataFrame(AB_COMPARISON)
+        df_cmp["segment_name"] = df_cmp["segment_name"].str.title()
+        if seg_filter != "All":
+            df_cmp = df_cmp[df_cmp["segment_name"] == seg_filter]
+        st.dataframe(
+            df_cmp.rename(columns={
+                "segment_name":    "Segment",
+                "variant":         "Variant",
+                "conversion_rate": "Conversion Rate",
+                "avg_sessions":    "Avg Sessions",
+                "avg_exports":     "Avg Exports",
+                "sample_size":     "Sample Size",
+            }).assign(**{
+                "Conversion Rate": lambda d: d["Conversion Rate"].map(lambda x: f"{x:.1%}"),
+            }),
+            use_container_width=True,
+            hide_index=True,
+        )
+        st.caption("Data from /api/ab-tests/comparison (M3: mock)")
 
-
-# ────────────────────────────────────────────────────────────────────────────────
-# KPIs
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  KPIs  â  /api/kpis
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 elif page == "KPIs":
-    page_header("KPIs", "Platform-level conversion metrics")
+    st.title("KPIs")
+    st.caption("Platform-level conversion and retention metrics")
 
-    kpis = api_get("/api/kpis") or {}
-    ab   = api_get("/api/ab-tests/summary") or []
+    # Period filter
+    kpi_period = st.radio(
+        "Reporting period",
+        ["Last 7 days", "Last 30 days", "Last 90 days"],
+        index=1,
+        horizontal=True,
+        key="kpi_period",
+    )
+    st.caption(f"Showing mock data â period selector wires to /api/kpis?period=... in M4")
+    st.divider()
 
-    conv  = kpis.get("overall_conversion_rate")
-    eng   = kpis.get("notification_engagement_rate")
-    churn = kpis.get("churn_rate_30d")
-    rev   = kpis.get("avg_revenue_amd")
+    # 3 big metric cards
+    k1, k2, k3 = st.columns(3)
+    k1.metric(
+        "Overall Conversion Rate",
+        f'{KPIS["overall_conversion_rate"]:.1%}',
+        delta="+1.1% vs last period",
+    )
+    k2.metric(
+        "Avg Time to Convert",
+        f'{KPIS["avg_time_to_convert_days"]:.1f} days',
+        delta="-0.8 days vs last period",
+    )
+    k3.metric(
+        "30-Day Pro Retention",
+        f'{KPIS["retention_30d"]:.0%}',
+        delta="+2% vs last period",
+    )
+    st.divider()
 
-    kpi_items = [
-        ("Overall conversion rate", f"{conv*100:.1f}%"   if conv  else "5.4%",  "+2.1% vs baseline"),
-        ("Avg time to convert",     "6.2 days",                                  "-3.8 days vs control"),
-        ("30-day retention",        f"{100-(churn*100 if churn else 17):.0f}%",  "Target: 80%"),
-        ("Notification engagement", f"{eng*100:.1f}%"    if eng   else "14.3%", "+6.1% vs control"),
-        ("New paid users",          "231",                                        "14-day window"),
-        ("Opt-out rate",            "1.2%",                                       "No increase"),
+    # 4th metric: notification engagement
+    k4, _, _ = st.columns(3)
+    k4.metric(
+        "Notification Engagement Rate",
+        f'{KPIS["notification_engagement_rate"]:.0%}',
+        delta="+4% vs last period",
+    )
+    st.caption("Data from /api/kpis (M3: mock)")
+
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  CAMPAIGN EDITOR  â  /api/campaigns/*  +  /api/global-params/*
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+elif page == "Campaign Editor":
+    st.title("Campaign Editor")
+    st.caption("Manage upgrade campaigns and global test parameters")
+
+    # Campaign list filter
+    status_options = ["All"] + list({c["status"] for c in CAMPAIGNS})
+    camp_status_filter = st.selectbox(
+        "Filter campaigns by status",
+        status_options,
+        key="camp_list_filter",
+    )
+    filtered_campaigns = CAMPAIGNS if camp_status_filter == "All" else [
+        c for c in CAMPAIGNS if c["status"] == camp_status_filter
     ]
 
-    cols = st.columns(3)
-    for i, (label, value, trend) in enumerate(kpi_items):
-        kpi_card(cols[i % 3], label, value, trend=trend)
+    left_col, right_col = st.columns([1, 2])
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # Results summary table
-    if ab:
-        rows_html = ""
-        for t in ab:
-            seg    = t.get("segment_name", "")
-            label  = t.get("segment_label", seg.title())
-            ctrl   = f"{t['control_rate']*100:.1f}%"   if t.get("control_rate")   else "—"
-            treat  = f"{t['treatment_rate']*100:.1f}%"  if t.get("treatment_rate") else "—"
-            lift   = f"+{t['lift_pct']:.0f}%"           if t.get("lift_pct")       else "—"
-            sig    = t.get("significance", "")
-            b, bl  = status_badge(sig or "pending")
-            lift_color = "#00b87a" if t.get("lift_pct") else "#9ca3af"
-            rows_html += f"""<tr>
-                <td>{seg_tag(seg, label)}</td>
-                <td>{ctrl}</td><td>{treat}</td>
-                <td style="color:{lift_color};font-weight:600">{lift}</td>
-                <td><span class="badge {b}">{bl}</span></td>
-            </tr>"""
-
-        st.markdown(f"""
-            <div class="panel">
-                <span class="panel-title">Results summary</span>
-                <table class="pulse-table">
-                    <thead><tr>
-                        <th>Segment</th><th>Control</th><th>Treatment</th>
-                        <th>Lift</th><th>Significance</th>
-                    </tr></thead>
-                    <tbody>{rows_html}</tbody>
-                </table>
-            </div>
-        """, unsafe_allow_html=True)
-
-    # Predictors
-    st.markdown("""
-        <div class="panel">
-            <span class="panel-title">Top conversion predictors</span>
-        </div>
-    """, unsafe_allow_html=True)
-    pred_df = pd.DataFrame({
-        "Feature":     ["Paywall hits", "Export count", "Session freq", "Days inactive"],
-        "Coefficient": [0.91, 0.74, 0.58, 0.38],
-    }).set_index("Feature")
-    st.bar_chart(pred_df, color="#00b87a", height=180)
-
-
-# ────────────────────────────────────────────────────────────────────────────────
-# USER DEMO
-# ────────────────────────────────────────────────────────────────────────────────
-elif page == "User Demo":
-    page_header("User Demo", "Simulate a user seeing the upgrade message and record their response")
-
-    params_map = get_global_params()
-    price     = int(params_map.get("pro_price_amd",  {}).get("value", 2900))
-    discount  = int(params_map.get("dormant_discount", {}).get("value", 20))
-    templates = int(params_map.get("template_count",  {}).get("value", 120))
-
-    DEFAULT_MSGS = {
-        "power":   f"You've exported {{{{export_count}}}} times and hit limits {{{{paywall_hits}}}} times — go unlimited for AMD {price}/month.",
-        "growing": f"You're growing fast! Unlock HD exports, custom fonts and more — AMD {price}/month.",
-        "casual":  f"Did you know Pro users get {templates} exclusive Armenian templates? Try Pro free for 7 days.",
-        "dormant": f"We miss you! Come back and get {discount}% off your first Pro month. Offer expires in 48h.",
-    }
-
-    if "upgraded_count" not in st.session_state:
-        st.session_state.upgraded_count = 0
-        st.session_state.later_count    = 0
-        st.session_state.demo_log       = []
-
-    col_left, col_right = st.columns([1, 1])
-
-    with col_left:
-        panel_header("Simulation controls")
-
-        seg_choice = st.selectbox(
-            "Simulated segment",
-            ["power", "growing", "casual", "dormant"],
-            format_func=lambda x: x.title() + " user",
-        )
-        group_choice = st.selectbox(
-            "A/B group",
-            ["treatment", "control"],
-            format_func=lambda x: "Treatment — targeted message" if x == "treatment" else "Control — generic message",
-        )
-
-        msg = DEFAULT_MSGS.get(seg_choice, "")
-        render_preview(msg, price, discount, templates)
-
-        bc1, bc2 = st.columns(2)
-        upgraded = bc1.button("Upgrade", use_container_width=True, type="primary")
-        later    = bc2.button("Try Later", use_container_width=True)
-
-        if upgraded:
-            result = api_post("/api/demo/respond", {"segment_name": seg_choice, "ab_group": group_choice, "decision": "upgraded"})
-            if result is not None:
-                st.session_state.upgraded_count += 1
-                st.session_state.demo_log.insert(0, {"seg": seg_choice, "group": group_choice, "decision": "upgraded"})
-                st.rerun()
-
-        if later:
-            result = api_post("/api/demo/respond", {"segment_name": seg_choice, "ab_group": group_choice, "decision": "try_later"})
-            if result is not None:
-                st.session_state.later_count += 1
-                st.session_state.demo_log.insert(0, {"seg": seg_choice, "group": group_choice, "decision": "try_later"})
-                st.rerun()
-
-        panel_close()
-
-        m1, m2 = st.columns(2)
-        m1.metric("Upgraded",  st.session_state.upgraded_count)
-        m2.metric("Try Later", st.session_state.later_count)
-
-        if st.button("Clear log", use_container_width=True):
-            st.session_state.upgraded_count = 0
-            st.session_state.later_count    = 0
-            st.session_state.demo_log       = []
-            st.rerun()
-
-    with col_right:
-        panel_header("Response log — backend events")
-
-        if st.session_state.demo_log:
-            for entry in st.session_state.demo_log[:12]:
-                dec_color = "#00b87a" if entry["decision"] == "upgraded" else "#d97706"
-                st.markdown(
-                    f'<div class="log-entry">'
-                    f'{seg_tag(entry["seg"], entry["seg"].title())}'
-                    f'&nbsp;<span style="color:{dec_color};font-weight:600">{entry["decision"]}</span>'
-                    f'&nbsp;<span style="color:#9ca3af">{entry["group"]}</span>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
+    with left_col:
+        st.subheader("Campaigns")
+        if not filtered_campaigns:
+            st.info("No campaigns match the selected filter.")
+            selected_c = CAMPAIGNS[0]
         else:
-            st.caption("No responses yet — click Upgrade or Try Later.")
+            campaign_names = [f'#{c["campaign_id"]} â {c["name"]}' for c in filtered_campaigns]
+            selected_idx = st.selectbox(
+                "Select campaign",
+                range(len(filtered_campaigns)),
+                format_func=lambda i: campaign_names[i],
+                key="campaign_select",
+            )
+            selected_c = filtered_campaigns[selected_idx]
 
-        panel_close()
+        c = selected_c
+        st.write(f"**Channel:** {c['channel'].upper()}")
+        st.write(f"**Trigger:** {c['trigger']}")
+        status_color = {"active": "â", "draft": "âª", "paused": "â¸ï¸"}
+        st.write(f"**Status:** {status_color.get(c['status'], 'â¢')} {c['status'].title()}")
 
+    with right_col:
+        st.subheader("Edit Campaign")
+        new_name = st.text_input("Campaign name", value=c["name"], key="camp_name")
+        new_msg  = st.text_area(
+            "Message template",
+            value=c["message"],
+            height=100,
+            key="camp_msg",
+            help="Will call PUT /api/campaigns/{id}/message in M4.",
+        )
+        ch1, ch2 = st.columns(2)
+        new_channel = ch1.selectbox(
+            "Channel",
+            ["in-app", "email", "push"],
+            index=["in-app", "email", "push"].index(c["channel"]),
+            key="camp_channel",
+        )
+        new_trigger = ch2.selectbox(
+            "Trigger",
+            ["paywall_hit", "session_threshold", "inactivity_14d"],
+            index=["paywall_hit", "session_threshold", "inactivity_14d"].index(c["trigger"]),
+            key="camp_trigger",
+        )
+        d1, d2 = st.columns(2)
+        d1.number_input("Discount %",           min_value=0,  max_value=100, value=c["discount_pct"],       key="camp_discount")
+        d2.number_input("Test duration (days)", min_value=1,  max_value=90,  value=c["test_duration_days"], key="camp_duration")
+        st.divider()
+        b1, b2, b3 = st.columns(3)
+        if b1.button("ð Launch campaign", key="btn_launch", type="primary"):
+            st.success(f"Campaign \"{new_name}\" launched (mock). POST /api/campaigns/{c['campaign_id']}/launch")
+        if b2.button("ð¾ Save changes", key="btn_save"):
+            st.info("Changes saved (mock). PUT /api/campaigns/{id}")
+        if b3.button("âº Reset to draft", key="btn_reset"):
+            st.warning("Campaign reset (mock). DELETE /api/campaigns/{id}/reset")
 
-# ────────────────────────────────────────────────────────────────────────────────
-# CAMPAIGN EDITOR
-# ────────────────────────────────────────────────────────────────────────────────
-elif page == "Campaign Editor":
-    page_header("Campaign Editor", "Edit messages, set channels and triggers, launch A/B tests")
+    st.divider()
+    st.subheader("Global Parameters")
+    st.caption("Shared defaults applied to all campaigns unless overridden")
+    gp1, gp2, gp3, gp4 = st.columns(4)
+    gp1.number_input("Test Duration (days)",    value=GLOBAL_PARAMS["test_duration_days"],     min_value=1,  max_value=90,  key="gp_dur")
+    gp2.number_input("Discount %",              value=GLOBAL_PARAMS["discount_pct"],           min_value=0,  max_value=100, key="gp_disc")
+    gp3.number_input("Min Sample Size",         value=GLOBAL_PARAMS["min_sample_size"],        min_value=10,               key="gp_sample")
+    gp4.number_input("Significance Threshold",  value=GLOBAL_PARAMS["significance_threshold"], min_value=0.0, max_value=1.0, step=0.01, key="gp_sig")
+    if st.button("Save global params", key="btn_gp_save"):
+        st.success("Global params saved (mock). PUT /api/global-params/{key}")
 
-    params_map = get_global_params()
-    price_val = int(params_map.get("pro_price_amd",   {}).get("value", 2900))
-    disc_val  = int(params_map.get("dormant_discount", {}).get("value", 20))
-    tmpl_val  = int(params_map.get("template_count",   {}).get("value", 120))
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  USER DEMO  â  /api/demo/message/{segment_name}  +  /api/demo/respond
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+elif page == "User Demo":
+    st.title("User Demo")
+    st.caption("Simulate how an upgrade message looks to a user by segment")
 
-    # Global params
-    panel_header("Global parameters")
-    gp1, gp2, gp3 = st.columns(3)
+    demo_col, stats_col = st.columns([1, 1])
 
-    with gp1:
-        price_val = st.number_input("Pro price (AMD)", value=price_val, step=100, key="g_price")
-        if st.button("Save", key="save_price"):
-            api_put("/api/global-params/pro_price_amd", {"value": str(price_val)})
-            st.success("Saved")
-            st.cache_data.clear()
-            st.rerun()
+    with demo_col:
+        # Segment selector  (/api/demo/message/{segment_name})
+        seg = st.selectbox(
+            "Select segment",
+            [s["segment_name"] for s in SEGMENT_COUNTS],
+            format_func=lambda x: x.title(),
+            key="demo_seg",
+        )
+        st.divider()
+        st.subheader("Upgrade Message")
+        msg = DEMO_MESSAGES[seg]
+        st.info(msg)
+        st.caption(f"Source: GET /api/demo/message/{seg} (M3: mock)")
+        st.divider()
 
-    with gp2:
-        disc_val = st.number_input("Discount % (dormant)", value=disc_val, step=1, key="g_disc")
-        if st.button("Save", key="save_disc"):
-            api_put("/api/global-params/dormant_discount", {"value": str(disc_val)})
-            st.success("Saved")
-            st.cache_data.clear()
-            st.rerun()
+        # Accept / Dismiss buttons  (/api/demo/respond)
+        st.write("**How would this user respond?**")
+        a_col, d_col = st.columns(2)
+        if a_col.button("â Accept upgrade", key="btn_accept", type="primary"):
+            st.success("Response 'accept' recorded (mock). POST /api/demo/respond")
+        if d_col.button("â Dismiss", key="btn_dismiss"):
+            st.warning("Response 'dismiss' recorded (mock). POST /api/demo/respond")
 
-    with gp3:
-        tmpl_val = st.number_input("Template count", value=tmpl_val, step=10, key="g_tmpl")
-        if st.button("Save", key="save_tmpl"):
-            api_put("/api/global-params/template_count", {"value": str(tmpl_val)})
-            st.success("Saved")
-            st.cache_data.clear()
-            st.rerun()
-
-    panel_close()
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # Campaign cards
-    campaigns = api_get("/api/campaigns") or []
-    if not campaigns:
-        st.info("No campaigns found.")
-    else:
-        for i in range(0, len(campaigns), 2):
-            row  = campaigns[i: i + 2]
-            cols = st.columns(len(row))
-            for col, c in zip(cols, row):
-                cid     = c["campaign_id"]
-                seg     = c.get("segment_name", "")
-                label   = c.get("segment_label", seg.title())
-                status  = c.get("status", "draft")
-                channel = c.get("channel", "").replace("_", " ").title()
-                trigger = c.get("trigger_event", "").replace("_", " ").title()
-                msg_obj = c.get("active_message") or {}
-                body    = msg_obj.get("body", "")
-                color   = COLORS.get(seg, "#111")
-                badge, badge_label = status_badge(status)
-
-                with col:
-                    st.markdown(f"""
-                        <div class="panel" style="margin-bottom:6px">
-                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                                {seg_tag(seg, label)}
-                                <span class="badge {badge}">{badge_label}</span>
-                            </div>
-                            <div style="font-size:11px;color:#6b7280">
-                                {channel} &nbsp;·&nbsp; {trigger}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-
-                    new_body = st.text_area("Message template", value=body, height=90, key=f"body_{cid}", label_visibility="collapsed")
-
-                    render_preview(new_body, price_val, disc_val, tmpl_val)
-
-                    ba, bb = st.columns(2)
-                    if ba.button("Save message", key=f"save_{cid}", use_container_width=True):
-                        api_put(f"/api/campaigns/{cid}/message", {"body": new_body})
-                        st.success("Saved")
-                        st.rerun()
-
-                    if status == "draft":
-                        if bb.button("Launch A/B test", key=f"launch_{cid}", use_container_width=True, type="primary"):
-                            api_post(f"/api/campaigns/{cid}/launch")
-                            st.success(f"{label} launched")
-                            st.rerun()
-                    else:
-                        if bb.button("Reset to draft", key=f"reset_{cid}", use_container_width=True):
-                            api_delete(f"/api/campaigns/{cid}/reset")
-                            st.success(f"{label} reset")
-                            st.rerun()
-
-                    st.markdown("<br>", unsafe_allow_html=True)
+    with stats_col:
+        # Response stats  (aggregated from /api/demo/respond)
+        st.subheader("Response Stats by Segment")
+        df_resp = pd.DataFrame(DEMO_RESPONSES)
+        df_pivot = df_resp.pivot(index="segment_name", columns="response", values="count").fillna(0).astype(int)
+        df_pivot.index = df_pivot.index.str.title()
+        df_pivot.columns = [col.title() for col in df_pivot.columns]
+        df_pivot["Total"] = df_pivot.sum(axis=1)
+        if "Accept" in df_pivot.columns:
+            df_pivot["Accept Rate"] = (df_pivot["Accept"] / df_pivot["Total"]).map(lambda x: f"{x:.0%}")
+        st.dataframe(df_pivot, use_container_width=True)
+        st.caption("Aggregated responses from /api/demo/respond (M3: mock)")
+        if "Accept" in df_pivot.columns:
+            st.bar_chart(
+                df_resp[df_resp["response"] == "accept"].set_index("segment_name")["count"]
+            )
+            st.caption("Accept counts by segment")
