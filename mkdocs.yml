@@ -8,12 +8,17 @@ docs_dir: docs/pages
 theme:
   name: material
   features:
+    - navigation.instant
+    - navigation.instant.prefetch
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
-    - toc.integrate
+    - navigation.path
     - navigation.top
+    - toc.integrate
     - search.suggest
     - search.highlight
+    - search.share
     - content.tabs.link
     - content.code.annotation
     - content.code.copy
