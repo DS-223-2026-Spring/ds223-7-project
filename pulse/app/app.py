@@ -472,38 +472,17 @@ elif page == "Campaign Editor":
             st.info("No campaigns match the selected filter.")
             selected_c = campaigns_data[0] if campaigns_data else {}
         else:
-            # Campaign cards — clickable via selectbox
-            def _card_label(c: dict) -> str:
-                seg_label = c.get("segment_label") or c.get("segment_name", "").title()
-                status    = STATUS_BADGES.get(c.get("status", "draft"), c.get("status", ""))
-                channel   = CHANNEL_ICONS.get(c.get("channel", ""), "")
-                return f"{channel} {seg_label}  ·  {status}"
-
             selected_idx = st.radio(
                 "Select campaign",
                 range(len(filtered)),
-                format_func=lambda i: _card_label(filtered[i]),
+                format_func=lambda i: (
+                    filtered[i].get("segment_label")
+                    or filtered[i].get("segment_name", "").title()
+                ),
                 key="campaign_radio",
                 label_visibility="collapsed",
             )
             selected_c = filtered[selected_idx]
-
-            # Mini-preview card for the selected campaign
-            c = selected_c
-            seg_color = c.get("color_hex", "#9ca3af")
-            st.markdown(
-                f"""
-                <div style="border-left: 4px solid {seg_color}; padding: 10px 14px;
-                            background: #f9fafb; border-radius: 6px; margin-top: 8px;">
-                  <b style="color:{seg_color}">
-                    {c.get("segment_label") or c.get("segment_name","").title()}
-                  </b><br>
-                  <small>Trigger: {TRIGGER_LABELS.get(c.get("trigger_event",""), c.get("trigger_event","—"))}</small><br>
-                  <small>Channel: {CHANNEL_ICONS.get(c.get("channel",""), "")} {c.get("channel","—").upper()}</small>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
 
     with edit_col:
         c = selected_c
