@@ -160,14 +160,15 @@ CREATE INDEX idx_paywall_hit_at     ON paywall_events(hit_at);
 -- =============================================================================
 
 CREATE TABLE campaigns (
-    campaign_id        UUID             PRIMARY KEY DEFAULT gen_random_uuid(),
-    segment_id         UUID             NOT NULL REFERENCES segments(segment_id),
-    channel            message_channel  NOT NULL DEFAULT 'in_app_popup',
-    trigger_event      message_trigger  NOT NULL DEFAULT 'on_paywall_hit',
-    status             campaign_status  NOT NULL DEFAULT 'draft',
-    active_message_id  UUID,
-    created_at         TIMESTAMPTZ      NOT NULL DEFAULT now(),
-    launched_at        TIMESTAMPTZ,
+    campaign_id         UUID             PRIMARY KEY DEFAULT gen_random_uuid(),
+    segment_id          UUID             NOT NULL REFERENCES segments(segment_id),
+    channel             message_channel  NOT NULL DEFAULT 'in_app_popup',
+    trigger_event       message_trigger  NOT NULL DEFAULT 'on_paywall_hit',
+    status              campaign_status  NOT NULL DEFAULT 'draft',
+    active_message_id   UUID,
+    control_message_id  UUID,
+    created_at          TIMESTAMPTZ      NOT NULL DEFAULT now(),
+    launched_at         TIMESTAMPTZ,
     UNIQUE (segment_id)
 );
 
