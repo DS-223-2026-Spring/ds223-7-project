@@ -1,11 +1,11 @@
-"""Pulse Dashboard — Streamlit frontend (Milestone 3: mock data with API fallback).
+"""Pulse Dashboard â Streamlit frontend (Milestone 3: mock data with API fallback).
 
 Screens match PM endpoint specs from issues #67 and #68:
-  Segments   — /api/segments/counts + /api/segments/behavioral-averages
-  A/B Tests  — /api/ab-tests/summary + /api/ab-tests/comparison
-  KPIs       — /api/kpis
-  Campaign   — /api/campaigns/* + /api/global-params/*
-  User Demo  — /api/demo/message/{segment_name} + /api/demo/respond
+  Segments   â /api/segments/counts + /api/segments/behavioral-averages
+  A/B Tests  â /api/ab-tests/summary + /api/ab-tests/comparison
+  KPIs       â /api/kpis
+  Campaign   â /api/campaigns/* + /api/global-params/*
+  User Demo  â /api/demo/message/{segment_name} + /api/demo/respond
 
 Issue #91: each screen has data tables, filters, charts, forms, and model results.
 """
@@ -51,10 +51,10 @@ def api_put(path: str, payload: dict):
 
 st.set_page_config(page_title="Pulse", layout="wide")
 
-# ── Mock data ────────────────────────────────────────────────────────────────────
+# ââ Mock data ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 # Field names match real API shapes; falls back to these when backend unavailable.
 
-# FIX 2a: /api/segments/counts — add missing label and color_hex fields
+# FIX 2a: /api/segments/counts â add missing label and color_hex fields
 SEGMENT_COUNTS = [
     {"segment_name": "power",   "label": "Power Users",   "color_hex": "#00b87a", "user_count": 312},
     {"segment_name": "growing", "label": "Growing Users",  "color_hex": "#3b82f6", "user_count": 891},
@@ -70,7 +70,7 @@ SEGMENT_BEHAVIORAL = [
     {"segment_name": "dormant", "avg_sessions_per_week": 0.4, "avg_exports": 0.2, "avg_paywall_hits": 0.0},
 ]
 
-# FIX 2b: /api/ab-tests/summary — fix "not significant" → "not_significant"
+# FIX 2b: /api/ab-tests/summary â fix "not significant" â "not_significant"
 AB_SUMMARY = [
     {"segment_name": "power",   "control_rate": 0.062, "treatment_rate": 0.091, "lift_pct": 46.8, "p_value": 0.012, "significance": "significant",     "status": "running"},
     {"segment_name": "growing", "control_rate": 0.041, "treatment_rate": 0.057, "lift_pct": 39.0, "p_value": 0.034, "significance": "significant",     "status": "running"},
@@ -78,7 +78,7 @@ AB_SUMMARY = [
     {"segment_name": "dormant", "control_rate": 0.005, "treatment_rate": 0.006, "lift_pct": 20.0, "p_value": 0.480, "significance": "not_significant", "status": "pending"},
 ]
 
-# FIX 2c: /api/ab-tests/comparison — remove "variant" field, use SegmentABComparison fields
+# FIX 2c: /api/ab-tests/comparison â remove "variant" field, use SegmentABComparison fields
 AB_COMPARISON = [
     {"segment_name": "power",   "label": "Power Users",   "color_hex": "#00b87a", "control_rate": 0.142, "treatment_rate": 0.198, "lift_pct": 39.4, "significance": "significant"},
     {"segment_name": "growing", "label": "Growing Users",  "color_hex": "#3b82f6", "control_rate": 0.089, "treatment_rate": 0.103, "lift_pct": 15.7, "significance": "borderline"},
@@ -86,7 +86,7 @@ AB_COMPARISON = [
     {"segment_name": "dormant", "label": "Dormant Users",  "color_hex": "#9ca3af", "control_rate": 0.008, "treatment_rate": 0.009, "lift_pct": 12.5, "significance": "not_significant"},
 ]
 
-# FIX 2d: /api/kpis — fix to match PlatformKPIs schema exactly
+# FIX 2d: /api/kpis â fix to match PlatformKPIs schema exactly
 KPIS = {
     "overall_conversion_rate":      0.054,
     "notification_engagement_rate": 0.143,
@@ -94,7 +94,7 @@ KPIS = {
     "avg_revenue_amd":              2900.0,
 }
 
-# FIX 2e: /api/campaigns — rename "trigger" → "trigger_event"
+# FIX 2e: /api/campaigns â rename "trigger" â "trigger_event"
 CAMPAIGNS = [
     {
         "campaign_id": 1, "name": "Power User Upgrade",
@@ -104,7 +104,7 @@ CAMPAIGNS = [
     },
     {
         "campaign_id": 2, "name": "Growing User Nudge",
-        "message": "You're growing fast — go Pro to remove all limits.",
+        "message": "You're growing fast â go Pro to remove all limits.",
         "channel": "email", "trigger_event": "export_attempt", "status": "draft",
         "discount_pct": 15, "test_duration_days": 14,
     },
@@ -127,12 +127,12 @@ GLOBAL_PARAMS = {
 # /api/demo/message/{segment_name}
 DEMO_MESSAGES = {
     "power":   "You're a power user! Upgrade to Pro for unlimited exports and priority support.",
-    "growing": "You're on a roll — go Pro to remove all export limits and unlock advanced filters.",
+    "growing": "You're on a roll â go Pro to remove all export limits and unlock advanced filters.",
     "casual":  "Enjoying Pulse? Pro gives you 5x more exports and premium templates.",
     "dormant": "Welcome back! Upgrade to Pro today and get 30% off for the next 48 hours.",
 }
 
-# FIX 2f: /api/demo/respond — fix "accept"→"upgraded", "dismiss"→"try_later"
+# FIX 2f: /api/demo/respond â fix "accept"â"upgraded", "dismiss"â"try_later"
 DEMO_RESPONSES = [
     {"segment_name": "power",   "response": "upgraded",   "count": 38},
     {"segment_name": "power",   "response": "try_later",  "count": 24},
@@ -144,7 +144,7 @@ DEMO_RESPONSES = [
     {"segment_name": "dormant", "response": "try_later",  "count": 18},
 ]
 
-# ── Sidebar navigation ────────────────────────────────────────────────────────────
+# ââ Sidebar navigation ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 with st.sidebar:
     st.title("Pulse")
     st.caption("Analytics Dashboard")
@@ -155,25 +155,25 @@ with st.sidebar:
         label_visibility="collapsed",
     )
     st.divider()
-    st.caption("Milestone 3 — API with mock fallback")
+    st.caption("Milestone 3 â API with mock fallback")
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  SEGMENTS  —  /api/segments/counts  +  /api/segments/behavioral-averages
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  SEGMENTS  â  /api/segments/counts  +  /api/segments/behavioral-averages
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 if page == "Segments":
     st.title("Segments")
-    st.caption("Free-user behavioural clustering — 4 segments")
+    st.caption("Free-user behavioural clustering â 4 segments")
 
     # FIX 8: wire real API calls with mock fallback
     raw_counts = api_get("/api/segments/counts")
     segments = raw_counts if raw_counts else SEGMENT_COUNTS
     if raw_counts is None:
-        st.caption("⚠️ Using demo data — backend unavailable")
+        st.caption("[demo data] Using mock data — backend unavailable")
 
     raw_beh = api_get("/api/segments/behavioral-averages")
     behavioral = raw_beh if raw_beh else SEGMENT_BEHAVIORAL
     if raw_beh is None:
-        st.caption("⚠️ Behavioral data — backend unavailable")
+        st.caption("[demo data] Behavioral data — backend unavailable")
 
     # Filter bar
     all_seg_names = [s["segment_name"].title() for s in segments]
@@ -222,9 +222,9 @@ if page == "Segments":
         c3.bar_chart(df_beh.set_index("segment_name")["avg_paywall_hits"])
         c3.caption("Avg Paywall Hits")
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  A/B TESTS  —  /api/ab-tests/summary  +  /api/ab-tests/comparison
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  A/B TESTS  â  /api/ab-tests/summary  +  /api/ab-tests/comparison
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 elif page == "A/B Tests":
     st.title("A/B Tests")
     st.caption("Control vs. treatment conversion performance per segment")
@@ -233,18 +233,18 @@ elif page == "A/B Tests":
     raw_summary = api_get("/api/ab-tests/summary")
     ab_summary = raw_summary if raw_summary else AB_SUMMARY
     if raw_summary is None:
-        st.caption("⚠️ Using demo data — backend unavailable")
+        st.caption("[demo data] Using mock data — backend unavailable")
 
     raw_cmp = api_get("/api/ab-tests/comparison")
     ab_comparison = raw_cmp if raw_cmp else AB_COMPARISON
     if raw_cmp is None:
-        st.caption("⚠️ Comparison data — backend unavailable")
+        st.caption("[demo data] Comparison data — backend unavailable")
 
     tab_summary, tab_comparison = st.tabs(["Summary", "Variant Comparison"])
 
     # Tab 1: Summary  (/api/ab-tests/summary)
     with tab_summary:
-        st.subheader("Test Summary — model results")
+        st.subheader("Test Summary â model results")
 
         # Filter bar
         f1, f2 = st.columns([1, 1])
@@ -293,11 +293,11 @@ elif page == "A/B Tests":
                 display_cols["p_value"] = "p-value"
             df_display = df_sum[[c for c in display_cols if c in df_sum.columns]].rename(columns=display_cols)
             if "Control Rate" in df_display.columns:
-                df_display["Control Rate"] = df_display["Control Rate"].map(lambda x: f"{x:.1%}" if x is not None else "—")
+                df_display["Control Rate"] = df_display["Control Rate"].map(lambda x: f"{x:.1%}" if x is not None else "â")
             if "Treatment Rate" in df_display.columns:
-                df_display["Treatment Rate"] = df_display["Treatment Rate"].map(lambda x: f"{x:.1%}" if x is not None else "—")
+                df_display["Treatment Rate"] = df_display["Treatment Rate"].map(lambda x: f"{x:.1%}" if x is not None else "â")
             if "Lift %" in df_display.columns:
-                df_display["Lift %"] = df_display["Lift %"].map(lambda x: f"+{x:.1f}%" if x is not None else "—")
+                df_display["Lift %"] = df_display["Lift %"].map(lambda x: f"+{x:.1f}%" if x is not None else "â")
             st.dataframe(df_display, use_container_width=True, hide_index=True)
         else:
             st.info("No results match the selected filters.")
@@ -323,17 +323,17 @@ elif page == "A/B Tests":
                 "lift_pct":        "Lift %",
                 "significance":    "Significance",
             }).assign(**{
-                "Control Rate":   lambda d: d["Control Rate"].map(lambda x: f"{x:.1%}" if x is not None else "—"),
-                "Treatment Rate": lambda d: d["Treatment Rate"].map(lambda x: f"{x:.1%}" if x is not None else "—"),
+                "Control Rate":   lambda d: d["Control Rate"].map(lambda x: f"{x:.1%}" if x is not None else "â"),
+                "Treatment Rate": lambda d: d["Treatment Rate"].map(lambda x: f"{x:.1%}" if x is not None else "â"),
             }),
             use_container_width=True,
             hide_index=True,
         )
         st.caption("Data from /api/ab-tests/comparison")
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  KPIs  —  /api/kpis
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  KPIs  â  /api/kpis
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 elif page == "KPIs":
     st.title("KPIs")
     st.caption("Platform-level conversion and retention metrics")
@@ -353,23 +353,23 @@ elif page == "KPIs":
     raw_kpis = api_get("/api/kpis")
     kpis = raw_kpis if raw_kpis else KPIS
     if raw_kpis is None:
-        st.caption("⚠️ Using demo data — backend unavailable")
+        st.caption("[demo data] Using mock data — backend unavailable")
 
     # FIX 5: use real PlatformKPIs field names
     k1, k2, k3 = st.columns(3)
     k1.metric(
         "Overall Conversion Rate",
-        f'{kpis["overall_conversion_rate"]:.1%}' if kpis.get("overall_conversion_rate") is not None else "—",
+        f'{kpis["overall_conversion_rate"]:.1%}' if kpis.get("overall_conversion_rate") is not None else "â",
         delta="+1.1% vs last period",
     )
     k2.metric(
         "Churn Rate 30d",
-        f'{kpis["churn_rate_30d"]:.1%}' if kpis.get("churn_rate_30d") is not None else "—",
+        f'{kpis["churn_rate_30d"]:.1%}' if kpis.get("churn_rate_30d") is not None else "â",
         delta="-0.1% vs last period",
     )
     k3.metric(
         "Avg Revenue (AMD)",
-        f'{kpis["avg_revenue_amd"]:,.0f}' if kpis.get("avg_revenue_amd") is not None else "—",
+        f'{kpis["avg_revenue_amd"]:,.0f}' if kpis.get("avg_revenue_amd") is not None else "â",
         delta="+50 AMD vs last period",
     )
     st.divider()
@@ -378,14 +378,14 @@ elif page == "KPIs":
     k4, _, _ = st.columns(3)
     k4.metric(
         "Notification Engagement Rate",
-        f'{kpis["notification_engagement_rate"]:.0%}' if kpis.get("notification_engagement_rate") is not None else "—",
+        f'{kpis["notification_engagement_rate"]:.0%}' if kpis.get("notification_engagement_rate") is not None else "â",
         delta="+4% vs last period",
     )
     st.caption("Data from /api/kpis")
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  CAMPAIGN EDITOR  —  /api/campaigns/*  +  /api/global-params/*
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  CAMPAIGN EDITOR  â  /api/campaigns/*  +  /api/global-params/*
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 elif page == "Campaign Editor":
     st.title("Campaign Editor")
     st.caption("Manage upgrade campaigns and global test parameters")
@@ -394,7 +394,7 @@ elif page == "Campaign Editor":
     raw_campaigns = api_get("/api/campaigns")
     campaigns_data = raw_campaigns if raw_campaigns else CAMPAIGNS
     if raw_campaigns is None:
-        st.caption("⚠️ Using demo data — backend unavailable")
+        st.caption("[demo data] Using mock data — backend unavailable")
 
     # FIX 6: sorted status options for deterministic ordering
     status_options = ["All"] + sorted({c["status"] for c in campaigns_data})
@@ -415,7 +415,7 @@ elif page == "Campaign Editor":
             st.info("No campaigns match the selected filter.")
             selected_c = campaigns_data[0]
         else:
-            campaign_names = [f'#{c["campaign_id"]} — {c["name"]}' for c in filtered_campaigns]
+            campaign_names = [f'#{c["campaign_id"]} â {c["name"]}' for c in filtered_campaigns]
             selected_idx = st.selectbox(
                 "Select campaign",
                 range(len(filtered_campaigns)),
@@ -427,9 +427,9 @@ elif page == "Campaign Editor":
         c = selected_c
         st.write(f"**Channel:** {c['channel'].upper()}")
         # FIX 2e: read trigger_event not trigger
-        st.write(f"**Trigger:** {c.get('trigger_event', '—')}")
-        status_color = {"active": "✅", "draft": "⚪", "paused": "⏸️"}
-        st.write(f"**Status:** {status_color.get(c['status'], '•')} {c['status'].title()}")
+        st.write(f"**Trigger:** {c.get('trigger_event', 'N/A')}")
+                status_color = {"active": "[live]", "draft": "[draft]", "paused": "[paused]"}
+        st.write(f"**Status:** {status_color.get(c['status'], '[unknown]')} {c['status'].title()}")
 
     with right_col:
         st.subheader("Edit Campaign")
@@ -469,24 +469,24 @@ elif page == "Campaign Editor":
         d2.number_input("Test duration (days)", min_value=1,  max_value=90,  value=c.get("test_duration_days", 14), key="camp_duration")
         st.divider()
         b1, b2, b3 = st.columns(3)
-        if b1.button("🚀 Launch campaign", key="btn_launch", type="primary"):
+        if b1.button("Launch Campaign", key="btn_launch", type="primary"):
             result = api_post(f"/api/campaigns/{c['campaign_id']}/launch", {})
             if result:
                 st.success(f"Campaign \"{new_name}\" launched.")
             else:
-                st.success(f"Campaign \"{new_name}\" launched (demo mode — backend unavailable).")
-        if b2.button("💾 Save changes", key="btn_save"):
+                st.success(f"Campaign \"{new_name}\" launched (demo mode â backend unavailable).")
+        if b2.button("Save Changes", key="btn_save"):
             result = api_put(f"/api/campaigns/{c['campaign_id']}", {"channel": new_channel, "trigger_event": new_trigger})
             if result:
                 st.info("Changes saved.")
             else:
-                st.info("Changes saved (demo mode — backend unavailable).")
-        if b3.button("↩ Reset to draft", key="btn_reset"):
+                st.info("Changes saved (demo mode â backend unavailable).")
+        if b3.button("Reset to Draft", key="btn_reset"):
             result = api_post(f"/api/campaigns/{c['campaign_id']}/reset", {})
             if result:
                 st.warning("Campaign reset to draft.")
             else:
-                st.warning("Campaign reset (demo mode — backend unavailable).")
+                st.warning("Campaign reset (demo mode â backend unavailable).")
 
     st.divider()
     st.subheader("Global Parameters")
@@ -501,11 +501,11 @@ elif page == "Campaign Editor":
         if result:
             st.success("Global params saved.")
         else:
-            st.success("Global params saved (demo mode — backend unavailable).")
+            st.success("Global params saved (demo mode â backend unavailable).")
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  USER DEMO  —  /api/demo/message/{segment_name}  +  /api/demo/respond
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  USER DEMO  â  /api/demo/message/{segment_name}  +  /api/demo/respond
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 elif page == "User Demo":
     st.title("User Demo")
     st.caption("Simulate how an upgrade message looks to a user by segment")
@@ -540,7 +540,7 @@ elif page == "User Demo":
         else:
             msg = DEMO_MESSAGES.get(seg, "")
             user_id = None
-            st.caption("⚠️ Using demo data — backend unavailable")
+            st.caption("[demo data] Using mock data — backend unavailable")
 
         st.info(msg)
         st.caption(f"Source: GET /api/demo/message/{seg}")
@@ -549,7 +549,7 @@ elif page == "User Demo":
         # FIX 2f: decision values "upgraded" and "try_later"
         st.write("**How would this user respond?**")
         a_col, d_col = st.columns(2)
-        if a_col.button("✅ Accept upgrade", key="btn_accept", type="primary"):
+        if a_col.button("Accept Upgrade", key="btn_accept", type="primary"):
             payload = {"segment_name": seg, "decision": "upgraded", "ab_group": ab_group}
             if user_id:
                 payload["user_id"] = user_id
@@ -557,8 +557,8 @@ elif page == "User Demo":
             if result:
                 st.success("Response recorded.")
             else:
-                st.info("Recorded (demo mode — backend unavailable).")
-        if d_col.button("❌ Dismiss", key="btn_dismiss"):
+                st.info("Recorded (demo mode â backend unavailable).")
+        if d_col.button("Dismiss", key="btn_dismiss"):
             payload = {"segment_name": seg, "decision": "try_later", "ab_group": ab_group}
             if user_id:
                 payload["user_id"] = user_id
@@ -566,7 +566,7 @@ elif page == "User Demo":
             if result:
                 st.success("Response recorded.")
             else:
-                st.info("Recorded (demo mode — backend unavailable).")
+                st.info("Recorded (demo mode â backend unavailable).")
 
     with stats_col:
         # Response stats  (aggregated from /api/demo/respond)
