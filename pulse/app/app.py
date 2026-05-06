@@ -438,8 +438,8 @@ elif page == "Campaign Editor":
         global_params = GLOBAL_PARAMS
 
     # ── helpers ──────────────────────────────────────────────────────────────
-    CHANNEL_ICONS   = {"in-app": "💬", "email": "📧", "push": "🔔"}
-    STATUS_BADGES   = {"active": "🟢 Active", "draft": "⚪ Draft", "paused": "⏸️ Paused"}
+        CHANNEL_ICONS   = {"in-app": "[in-app]", "email": "[email]", "push": "[push]"}
+        STATUS_BADGES   = {"active": "[live]", "draft": "[draft]", "paused": "[paused]"}
     TRIGGER_LABELS  = {
         "paywall_hit":    "Paywall Hit",
         "export_attempt": "Export Attempt",
@@ -520,7 +520,7 @@ elif page == "Campaign Editor":
         b1, b2, b3 = st.columns(3)
         campaign_id = c.get("campaign_id", 1)
 
-        if b1.button("🚀 Launch", key="btn_launch", type="primary", use_container_width=True):
+        if b1.button("Launch", key="btn_launch", type="primary", use_container_width=True):
             # First save the message, then launch
             api_put(f"/api/campaigns/{campaign_id}/message", {"body": new_msg})
             result = api_post(f"/api/campaigns/{campaign_id}/launch", {})
@@ -529,7 +529,7 @@ elif page == "Campaign Editor":
             else:
                 st.success(f"✅ Campaign for **{seg_label}** launched (demo mode).")
 
-        if b2.button("💾 Save", key="btn_save", use_container_width=True):
+        if b2.button("Save", key="btn_save", use_container_width=True):
             result = api_put(
                 f"/api/campaigns/{campaign_id}/message",
                 {"body": new_msg},
@@ -539,7 +539,7 @@ elif page == "Campaign Editor":
             else:
                 st.info("Message saved (demo mode).")
 
-        if b3.button("↩ Reset", key="btn_reset", use_container_width=True):
+        if b3.button("Reset", key="btn_reset", use_container_width=True):
             result = api_post(f"/api/campaigns/{campaign_id}/reset", {})
             if result:
                 st.warning("Campaign reset to draft.")
@@ -566,7 +566,7 @@ elif page == "Campaign Editor":
     gp_sig    = gp4.number_input("Significance Threshold", value=_float(global_params.get("significance_threshold", 0.05), 0.05),
                                   min_value=0.0, max_value=1.0, step=0.01, format="%.2f", key="gp_sig")
 
-    if st.button("💾 Save global params", key="btn_gp_save"):
+    if st.button("Save global params", key="btn_gp_save"):
         params_to_save = {
             "test_duration_days":    gp_dur,
             "discount_pct":          gp_disc,
@@ -629,7 +629,7 @@ elif page == "User Demo":
         # FIX 2f: decision values "upgraded" and "try_later"
         st.write("**How would this user respond?**")
         a_col, d_col = st.columns(2)
-        if a_col.button("✅ Accept upgrade", key="btn_accept", type="primary"):
+        if a_col.button("Accept Upgrade", key="btn_accept", type="primary"):
             payload = {"segment_name": seg, "decision": "upgraded", "ab_group": ab_group}
             if user_id:
                 payload["user_id"] = user_id
@@ -638,7 +638,7 @@ elif page == "User Demo":
                 st.success("Response recorded.")
             else:
                 st.info("Recorded (demo mode — backend unavailable).")
-        if d_col.button("❌ Dismiss", key="btn_dismiss"):
+        if d_col.button("Dismiss", key="btn_dismiss"):
             payload = {"segment_name": seg, "decision": "try_later", "ab_group": ab_group}
             if user_id:
                 payload["user_id"] = user_id
