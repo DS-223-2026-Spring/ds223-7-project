@@ -92,9 +92,9 @@ def ensure_ab_tests(conn) -> dict:
 
     existing = {r["seg_name"]: str(r["test_id"]) for r in rows}
 
+    # campaigns table has active_message_id only (no control_message_id column)
     campaigns = conn.execute(text("""
-        SELECT s.name AS seg_name, c.campaign_id, c.active_message_id,
-               c.control_message_id
+        SELECT s.name AS seg_name, c.campaign_id, c.active_message_id
         FROM campaigns c
         JOIN segments s ON s.segment_id = c.segment_id
     """)).mappings().all()

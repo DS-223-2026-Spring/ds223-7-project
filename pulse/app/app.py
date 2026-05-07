@@ -49,6 +49,16 @@ def api_put(path: str, payload: dict):
         return None
 
 
+def api_delete(path: str):
+    """DELETE to the backend API. Returns parsed JSON or None on error."""
+    try:
+        r = requests.delete(f"{API}{path}", timeout=5)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return None
+
+
 st.set_page_config(page_title="Pulse", layout="wide")
 
 # ── Mock data ────────────────────────────────────────────────────────────────────
@@ -103,9 +113,9 @@ CAMPAIGNS = [
         "segment_name": "power",
         "segment_label": "Power Users",
         "color_hex": "#00b87a",
-        "channel": "in-app",
-        "trigger_event": "paywall_hit",
-        "status": "active",
+        "channel": "in_app_popup",
+        "trigger_event": "on_paywall_hit",
+        "status": "running",
         "active_message": {"body": "You're a power user! Unlock unlimited exports with Pro."},
         "created_at": "2026-04-01T10:00:00",
         "launched_at": "2026-04-03T09:00:00",
@@ -116,7 +126,7 @@ CAMPAIGNS = [
         "segment_label": "Growing Users",
         "color_hex": "#3b82f6",
         "channel": "email",
-        "trigger_event": "export_attempt",
+        "trigger_event": "after_3rd_export",
         "status": "draft",
         "active_message": {"body": "You're growing fast — go Pro to remove all limits."},
         "created_at": "2026-04-05T11:00:00",
@@ -127,8 +137,8 @@ CAMPAIGNS = [
         "segment_name": "casual",
         "segment_label": "Casual Users",
         "color_hex": "#f59e0b",
-        "channel": "push",
-        "trigger_event": "session_start",
+        "channel": "push_notification",
+        "trigger_event": "on_app_open",
         "status": "draft",
         "active_message": {"body": "Enjoying Pulse? Pro gives you 5x more exports and premium templates."},
         "created_at": "2026-04-07T12:00:00",
@@ -139,10 +149,10 @@ CAMPAIGNS = [
         "segment_name": "dormant",
         "segment_label": "Dormant Users",
         "color_hex": "#9ca3af",
-        "channel": "push",
-        "trigger_event": "session_start",
+        "channel": "push_notification",
+        "trigger_event": "on_app_open",
         "status": "draft",
-        "active_message": {"body": "We miss you! Come back and get 30% off Pro for the next 48 hours."},
+        "active_message": {"body": "We miss you! Come back and get {{discount}}% off Pro for the next 48 hours."},
         "created_at": "2026-04-10T08:00:00",
         "launched_at": None,
     },
@@ -437,16 +447,18 @@ elif page == "Campaign Editor":
     else:
         global_params = GLOBAL_PARAMS
 
-    # ── helpers ──────────────────────────────────────────────────────────────
-    CHANNEL_ICONS   = {"in-app": "💬", "email": "📧", "push": "🔔"}
-    STATUS_BADGES   = {"active": "🟢 Active", "draft": "⚪ Draft", "paused": "⏸️ Paused"}
+    # ── helpers — enum values match DB message_channel / message_trigger types ─
+    CHANNEL_ICONS   = {"in_app_popup": "💬", "email": "📧", "push_notification": "🔔"}
+    CHANNEL_LABELS  = {"in_app_popup": "💬 In-App", "email": "📧 Email", "push_notification": "🔔 Push"}
+    STATUS_BADGES   = {"running": "🟢 Running", "draft": "⚪ Draft", "paused": "⏸️ Paused",
+                       "pending": "🕐 Pending", "completed": "✅ Completed"}
     TRIGGER_LABELS  = {
-        "paywall_hit":    "Paywall Hit",
-        "export_attempt": "Export Attempt",
-        "session_start":  "Session Start",
+        "on_paywall_hit":  "Paywall Hit",
+        "on_app_open":     "App Open",
+        "after_3rd_export": "After 3rd Export",
     }
-    channel_options = ["in-app", "email", "push"]
-    trigger_options = ["paywall_hit", "export_attempt", "session_start"]
+    channel_options = ["in_app_popup", "email", "push_notification"]
+    trigger_options = ["on_paywall_hit", "on_app_open", "after_3rd_export"]
 
     def _msg_body(campaign: dict) -> str:
         """Extract message body from CampaignOut — real API nests it in active_message."""
@@ -512,7 +524,7 @@ elif page == "Campaign Editor":
         channel_idx  = channel_options.index(c["channel"]) if c.get("channel") in channel_options else 0
         trigger_idx  = trigger_options.index(c["trigger_event"]) if c.get("trigger_event") in trigger_options else 0
         new_channel  = r1.selectbox("Channel",  channel_options, index=channel_idx,  key="camp_channel",
-                                    format_func=lambda x: f"{CHANNEL_ICONS.get(x,'')} {x.upper()}")
+                                    format_func=lambda x: CHANNEL_LABELS.get(x, x))
         new_trigger  = r2.selectbox("Trigger",  trigger_options, index=trigger_idx,  key="camp_trigger",
                                     format_func=lambda x: TRIGGER_LABELS.get(x, x))
 
@@ -540,7 +552,8 @@ elif page == "Campaign Editor":
                 st.info("Message saved (demo mode).")
 
         if b3.button("↩ Reset", key="btn_reset", use_container_width=True):
-            result = api_post(f"/api/campaigns/{campaign_id}/reset", {})
+            # API defines DELETE /api/campaigns/{id}/reset
+            result = api_delete(f"/api/campaigns/{campaign_id}/reset")
             if result:
                 st.warning("Campaign reset to draft.")
             else:
@@ -612,11 +625,11 @@ elif page == "User Demo":
         st.divider()
         st.subheader("Upgrade Message")
 
-        # FIX 8: wire real API call with mock fallback
-        raw_demo = api_get(f"/api/demo/user", segment=seg)
+        # Route: GET /api/demo/message/{segment_name} → DemoMessageOut (rendered_body)
+        raw_demo = api_get(f"/api/demo/message/{seg}")
         if raw_demo:
-            msg = raw_demo.get("rendered_body") or raw_demo.get("message") or DEMO_MESSAGES.get(seg, "")
-            user_id = raw_demo.get("user_id")
+            msg = raw_demo.get("rendered_body") or DEMO_MESSAGES.get(seg, "")
+            user_id = None  # DemoMessageOut has no user_id; respond uses segment_name
         else:
             msg = DEMO_MESSAGES.get(seg, "")
             user_id = None
