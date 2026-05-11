@@ -1,20 +1,34 @@
-"""Pulse Dashboard — Streamlit frontend (Milestone 3: mock data).
+"""Pulse Dashboard â Streamlit frontend (Milestone 3: mock data).
 
 Screens match PM endpoint specs from issues #67 and #68:
-  Segments   → /api/segments/counts + /api/segments/behavioral-averages
-  A/B Tests  → /api/ab-tests/summary + /api/ab-tests/comparison
-  KPIs       → /api/kpis
-  Campaign   → /api/campaigns/* + /api/global-params/*
-  User Demo  → /api/demo/message/{segment_name} + /api/demo/respond
+  Segments   â /api/segments/counts + /api/segments/behavioral-averages
+  A/B Tests  â /api/ab-tests/summary + /api/ab-tests/comparison
+  KPIs       â /api/kpis
+  Campaign   â /api/campaigns/* + /api/global-params/*
+  User Demo  â /api/demo/message/{segment_name} + /api/demo/respond
 
 Issue #91: each screen has data tables, filters, charts, forms, and model results.
 """
 import streamlit as st
 import pandas as pd
+import requests
+
+
+# ── API helper ──────────────────────────────────────────────────────────────────────────
+BASE_URL = "http://back:8008"
+
+def api_get(path: str):
+    """GET helper — returns parsed JSON or None on error (falls back to mock data)."""
+    try:
+        r = requests.get(BASE_URL + path, timeout=5)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return None
 
 st.set_page_config(page_title="Pulse", layout="wide")
 
-# ── Mock data ────────────────────────────────────────────────────────────────────────────
+# ââ Mock data ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 # Field names match real API shapes; wiring in M4 is a one-line change.
 
 # /api/segments/counts
@@ -32,6 +46,28 @@ SEGMENT_BEHAVIORAL = [
     {"segment_name": "casual",  "avg_sessions_per_week": 2.3, "avg_exports": 1.8, "avg_paywall_hits": 0.6},
     {"segment_name": "dormant", "avg_sessions_per_week": 0.4, "avg_exports": 0.2, "avg_paywall_hits": 0.0},
 ]
+
+# /api/segments/{name}/users  (mock fallback for M4 until endpoint #114 is ready)
+SEGMENT_USERS_MOCK = {
+    "power": [
+        {"user_id": 1, "email": "alice@example.com", "exports": 14, "sessions": 10, "paywall_hits": 8},
+        {"user_id": 2, "email": "bob@example.com",   "exports": 11, "sessions": 9,  "paywall_hits": 7},
+        {"user_id": 3, "email": "carol@example.com", "exports": 10, "sessions": 8,  "paywall_hits": 6},
+    ],
+    "growing": [
+        {"user_id": 4, "email": "dave@example.com",  "exports": 6,  "sessions": 6,  "paywall_hits": 3},
+        {"user_id": 5, "email": "eve@example.com",   "exports": 5,  "sessions": 5,  "paywall_hits": 2},
+        {"user_id": 6, "email": "frank@example.com", "exports": 4,  "sessions": 4,  "paywall_hits": 1},
+    ],
+    "casual": [
+        {"user_id": 7, "email": "grace@example.com", "exports": 2,  "sessions": 2,  "paywall_hits": 1},
+        {"user_id": 8, "email": "hank@example.com",  "exports": 1,  "sessions": 2,  "paywall_hits": 0},
+    ],
+    "dormant": [
+        {"user_id": 9,  "email": "ivan@example.com", "exports": 0,  "sessions": 0,  "paywall_hits": 0},
+        {"user_id": 10, "email": "judy@example.com", "exports": 0,  "sessions": 1,  "paywall_hits": 0},
+    ],
+}
 
 # /api/ab-tests/summary
 AB_SUMMARY = [
@@ -71,7 +107,7 @@ CAMPAIGNS = [
     },
     {
         "campaign_id": 2, "name": "Growing User Nudge",
-        "message": "You're growing fast — go Pro to remove all limits.",
+        "message": "You're growing fast â go Pro to remove all limits.",
         "channel": "email", "trigger": "session_threshold", "status": "draft",
         "discount_pct": 15, "test_duration_days": 14,
     },
@@ -94,7 +130,7 @@ GLOBAL_PARAMS = {
 # /api/demo/message/{segment_name}
 DEMO_MESSAGES = {
     "power":   "You're a power user! Upgrade to Pro for unlimited exports and priority support.",
-    "growing": "You're on a roll — go Pro to remove all export limits and unlock advanced filters.",
+    "growing": "You're on a roll â go Pro to remove all export limits and unlock advanced filters.",
     "casual":  "Enjoying Pulse? Pro gives you 5x more exports and premium templates.",
     "dormant": "Welcome back! Upgrade to Pro today and get 30% off for the next 48 hours.",
 }
@@ -111,7 +147,7 @@ DEMO_RESPONSES = [
     {"segment_name": "dormant", "response": "dismiss", "count": 18},
 ]
 
-# ── Sidebar navigation ─────────────────────────────────────────────────────────────────────
+# ââ Sidebar navigation âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 with st.sidebar:
     st.title("Pulse")
     st.caption("Analytics Dashboard")
@@ -122,16 +158,16 @@ with st.sidebar:
         label_visibility="collapsed",
     )
     st.divider()
-    st.caption("Milestone 3 — mock data")
+    st.caption("Milestone 3 â mock data")
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  SEGMENTS  →  /api/segments/counts  +  /api/segments/behavioral-averages
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  SEGMENTS  â  /api/segments/counts  +  /api/segments/behavioral-averages
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 if page == "Segments":
     st.title("Segments")
-    st.caption("Free-user behavioural clustering — 4 segments")
+    st.caption("Free-user behavioural clustering â 4 segments")
 
-    # — Filter bar ———————————————————————————————————————————————————————————————————————————
+    # â Filter bar âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
     all_seg_names = [s["segment_name"].title() for s in SEGMENT_COUNTS]
     seg_filter_options = st.multiselect(
         "Filter segments",
@@ -178,9 +214,25 @@ if page == "Segments":
         c3.bar_chart(df_beh.set_index("segment_name")["avg_paywall_hits"])
         c3.caption("Avg Paywall Hits")
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  A/B TESTS  →  /api/ab-tests/summary  +  /api/ab-tests/comparison
-# ────────────────────────────────────────────────────────────────────────────────
+
+    # Section 3: User breakdown table  (/api/segments/{name}/users)
+    st.subheader("Top Users by Segment")
+    seg_options_lower = [s.lower() for s in seg_filter_options]
+    for seg_name in seg_options_lower:
+        users_data = api_get(f"/api/segments/{seg_name}/users")
+        if users_data is None:
+            users_data = SEGMENT_USERS_MOCK.get(seg_name, [])
+        if users_data:
+            st.subheader(f"Top Users — {seg_name.title()}")
+            st.dataframe(
+                pd.DataFrame(users_data),
+                use_container_width=True,
+                hide_index=True,
+            )
+
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  A/B TESTS  â  /api/ab-tests/summary  +  /api/ab-tests/comparison
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 elif page == "A/B Tests":
     st.title("A/B Tests")
     st.caption("Control vs. treatment conversion performance per segment")
@@ -189,7 +241,7 @@ elif page == "A/B Tests":
 
     # Tab 1: Summary  (/api/ab-tests/summary)
     with tab_summary:
-        st.subheader("Test Summary — model results")
+        st.subheader("Test Summary â model results")
 
         # Filter bar
         f1, f2 = st.columns([1, 1])
@@ -268,11 +320,37 @@ elif page == "A/B Tests":
             use_container_width=True,
             hide_index=True,
         )
-        st.caption("Data from /api/ab-tests/comparison (M3: mock)")
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  KPIs  →  /api/kpis
-# ────────────────────────────────────────────────────────────────────────────────
+        # Control vs Treatment bar chart per segment
+        if not df_cmp.empty:
+            import altair as alt
+            df_rates = (
+                df_cmp[["segment_name", "variant", "conversion_rate"]]
+                .copy()
+                .rename(columns={"segment_name": "Segment", "variant": "Variant", "conversion_rate": "Conversion Rate"})
+            )
+            chart = (
+                alt.Chart(df_rates)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Segment:N", title="Segment"),
+                    y=alt.Y("Conversion Rate:Q", axis=alt.Axis(format=".1%"), title="Conversion Rate"),
+                    color=alt.Color("Variant:N", scale=alt.Scale(domain=["control", "treatment"], range=["#4C78A8", "#F58518"])),
+                    xOffset="Variant:N",
+                    tooltip=[
+                        alt.Tooltip("Segment:N"),
+                        alt.Tooltip("Variant:N"),
+                        alt.Tooltip("Conversion Rate:Q", format=".1%"),
+                    ],
+                )
+                .properties(title="Control vs Treatment Conversion Rate by Segment")
+            )
+            st.altair_chart(chart, use_container_width=True)
+                st.caption("Data from /api/ab-tests/comparison (M3: mock)")
+
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  KPIs  â  /api/kpis
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 elif page == "KPIs":
     st.title("KPIs")
     st.caption("Platform-level conversion and retention metrics")
@@ -285,7 +363,7 @@ elif page == "KPIs":
         horizontal=True,
         key="kpi_period",
     )
-    st.caption(f"Showing mock data — period selector wires to /api/kpis?period=... in M4")
+    st.caption(f"Showing mock data â period selector wires to /api/kpis?period=... in M4")
     st.divider()
 
     # 3 big metric cards
@@ -316,9 +394,9 @@ elif page == "KPIs":
     )
     st.caption("Data from /api/kpis (M3: mock)")
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  CAMPAIGN EDITOR  →  /api/campaigns/*  +  /api/global-params/*
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  CAMPAIGN EDITOR  â  /api/campaigns/*  +  /api/global-params/*
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 elif page == "Campaign Editor":
     st.title("Campaign Editor")
     st.caption("Manage upgrade campaigns and global test parameters")
@@ -342,7 +420,7 @@ elif page == "Campaign Editor":
             st.info("No campaigns match the selected filter.")
             selected_c = CAMPAIGNS[0]
         else:
-            campaign_names = [f'#{c["campaign_id"]} — {c["name"]}' for c in filtered_campaigns]
+            campaign_names = [f'#{c["campaign_id"]} â {c["name"]}' for c in filtered_campaigns]
             selected_idx = st.selectbox(
                 "Select campaign",
                 range(len(filtered_campaigns)),
@@ -354,8 +432,8 @@ elif page == "Campaign Editor":
         c = selected_c
         st.write(f"**Channel:** {c['channel'].upper()}")
         st.write(f"**Trigger:** {c['trigger']}")
-        status_color = {"active": "✅", "draft": "⚪", "paused": "⏸️"}
-        st.write(f"**Status:** {status_color.get(c['status'], '•')} {c['status'].title()}")
+        status_color = {"active": "â", "draft": "âª", "paused": "â¸ï¸"}
+        st.write(f"**Status:** {status_color.get(c['status'], 'â¢')} {c['status'].title()}")
 
     with right_col:
         st.subheader("Edit Campaign")
@@ -385,11 +463,11 @@ elif page == "Campaign Editor":
         d2.number_input("Test duration (days)", min_value=1,  max_value=90,  value=c["test_duration_days"], key="camp_duration")
         st.divider()
         b1, b2, b3 = st.columns(3)
-        if b1.button("🚀 Launch campaign", key="btn_launch", type="primary"):
+        if b1.button("ð Launch campaign", key="btn_launch", type="primary"):
             st.success(f"Campaign \"{new_name}\" launched (mock). POST /api/campaigns/{c['campaign_id']}/launch")
-        if b2.button("💾 Save changes", key="btn_save"):
+        if b2.button("ð¾ Save changes", key="btn_save"):
             st.info("Changes saved (mock). PUT /api/campaigns/{id}")
-        if b3.button("↺ Reset to draft", key="btn_reset"):
+        if b3.button("âº Reset to draft", key="btn_reset"):
             st.warning("Campaign reset (mock). DELETE /api/campaigns/{id}/reset")
 
     st.divider()
@@ -403,9 +481,9 @@ elif page == "Campaign Editor":
     if st.button("Save global params", key="btn_gp_save"):
         st.success("Global params saved (mock). PUT /api/global-params/{key}")
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  USER DEMO  →  /api/demo/message/{segment_name}  +  /api/demo/respond
-# ────────────────────────────────────────────────────────────────────────────────
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+#  USER DEMO  â  /api/demo/message/{segment_name}  +  /api/demo/respond
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 elif page == "User Demo":
     st.title("User Demo")
     st.caption("Simulate how an upgrade message looks to a user by segment")
@@ -430,9 +508,9 @@ elif page == "User Demo":
         # Accept / Dismiss buttons  (/api/demo/respond)
         st.write("**How would this user respond?**")
         a_col, d_col = st.columns(2)
-        if a_col.button("✅ Accept upgrade", key="btn_accept", type="primary"):
+        if a_col.button("â Accept upgrade", key="btn_accept", type="primary"):
             st.success("Response 'accept' recorded (mock). POST /api/demo/respond")
-        if d_col.button("❌ Dismiss", key="btn_dismiss"):
+        if d_col.button("â Dismiss", key="btn_dismiss"):
             st.warning("Response 'dismiss' recorded (mock). POST /api/demo/respond")
 
     with stats_col:
