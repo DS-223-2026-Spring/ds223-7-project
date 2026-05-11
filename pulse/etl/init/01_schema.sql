@@ -678,3 +678,55 @@ DO $$ BEGIN
     ALTER TABLE ab_test_results ADD CONSTRAINT chk_p_value_range CHECK (p_value IS NULL OR (p_value >= 0 AND p_value <= 1));
   END IF;
 END $$;
+
+-- =============================================================================
+-- MILESTONE 4 ADDITIONS
+-- =============================================================================
+
+-- Add control_message_id to campaigns if not already present
+-- (already added in Milestone 3 fix, kept here for documentation)
+
+-- View: user behavioral features for DS feature pipeline
+CREATE OR REPLACE VIEW v_user_behavioral_features_m4 AS
+SELECT
+    u.user_id,
+    u.email,
+    u.plan,
+    u.total_sessions,
+    u.total_exports,
+    u.total_paywall_hits,
+    u.total_thesaurus_uses,
+    u.days_since_last_login,
+    s.name AS segment_name,
+    COALESCE(abt.status, 'not_assigned') AS test_status,
+    COALESCE(aa.group_type::text, 'unassigned') AS ab_group
+FROM users u
+LEFT JOIN user_segments us ON us.user_id = u.user_id AND us.expires_at IS NULL
+LEFT JOIN segments s ON s.segment_id = us.segment_id
+LEFT JOIN ab_assignments aa ON aa.user_id = u.user_id
+LEFT JOIN ab_tests abt ON abt.test_id = aa.test_id;
+
+-- View: conversion funnel for analytics dashboard
+CREATE OR REPLACE VIEW v_conversion_funnel AS
+SELECT
+    s.name                                          AS segment_name,
+    s.label,
+    s.color_hex,
+    COUNT(DISTINCT u.user_id)                       AS total_users,
+    COUNT(DISTINCT ne.user_id)
+        FILTER (WHERE ne.event_type = 'shown')      AS notified,
+    COUNT(DISTINCT ne.user_id)
+        FILTER (WHERE ne.event_type IN ('opened','clicked')) AS engaged,
+    COUNT(DISTINCT co.user_id)
+        FILTER (WHERE co.decision = 'upgraded')     AS converted,
+    ROUND(
+        COUNT(DISTINCT co.user_id) FILTER (WHERE co.decision = 'upgraded')::numeric
+        / NULLIF(COUNT(DISTINCT u.user_id), 0), 4
+    )                                               AS conversion_rate
+FROM segments s
+LEFT JOIN user_segments us ON us.segment_id = s.segment_id AND us.expires_at IS NULL
+LEFT JOIN users u ON u.user_id = us.user_id
+LEFT JOIN notification_events ne ON ne.user_id = u.user_id
+LEFT JOIN conversion_outcomes co ON co.user_id = u.user_id
+GROUP BY s.segment_id, s.name, s.label, s.color_hex
+ORDER BY conversion_rate DESC NULLS LAST;
