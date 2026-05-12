@@ -867,3 +867,48 @@ BEGIN
 
     RAISE NOTICE 'Seeded 442 synthetic users across 4 segments.';
 END $$;
+
+-- =============================================================================
+-- SYNTHETIC CONVERSION OUTCOMES SEED
+-- Seeds realistic conversion events so the ML model has positive examples.
+-- Rates: power~8%, growing~5%, casual~2%, dormant~1%
+-- =============================================================================
+DO $$
+DECLARE
+    v_uid        UUID;
+    v_conv_rate  NUMERIC;
+    v_seg_name   TEXT;
+BEGIN
+    IF (SELECT COUNT(*) FROM conversion_outcomes) > 0 THEN
+        RAISE NOTICE 'Conversion outcomes already seeded — skipping.';
+        RETURN;
+    END IF;
+
+    FOR v_uid, v_seg_name IN
+        SELECT u.user_id, s.name
+        FROM users u
+        JOIN user_segments us ON us.user_id = u.user_id AND us.expires_at IS NULL
+        JOIN segments s       ON s.segment_id = us.segment_id
+    LOOP
+        v_conv_rate := CASE v_seg_name
+            WHEN 'power'   THEN 0.08
+            WHEN 'growing' THEN 0.05
+            WHEN 'casual'  THEN 0.02
+            WHEN 'dormant' THEN 0.01
+            ELSE 0.0
+        END;
+
+        IF random() < v_conv_rate THEN
+            INSERT INTO conversion_outcomes (
+                user_id, decision, revenue_amd, converted_at
+            ) VALUES (
+                v_uid,
+                'upgraded',
+                2900,
+                now() - make_interval(days := (random()*30)::INT)
+            ) ON CONFLICT DO NOTHING;
+        END IF;
+    END LOOP;
+
+    RAISE NOTICE 'Synthetic conversion outcomes seeded.';
+END $$;

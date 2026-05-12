@@ -173,7 +173,7 @@ def write_scores_to_db(preds: pd.DataFrame) -> None:
                 INSERT INTO user_conversion_scores
                     (user_id, segment_name, conversion_prob, confidence_tier, rank)
                 VALUES
-                    (:uid, :seg::segment_name, :prob, :tier, :rank)
+                    (:uid, CAST(:seg AS segment_name), :prob, :tier, :rank)
                 ON CONFLICT (user_id) DO UPDATE SET
                     segment_name    = EXCLUDED.segment_name,
                     conversion_prob = EXCLUDED.conversion_prob,
