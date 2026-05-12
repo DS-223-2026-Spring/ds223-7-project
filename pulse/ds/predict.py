@@ -155,6 +155,41 @@ def save_predictions_csv(preds: pd.DataFrame, save_dir: str = OUTPUT_DIR) -> str
     return path
 
 
+def write_scores_to_db(preds: pd.DataFrame) -> None:
+    """Upsert per-user conversion probability scores into user_conversion_scores.
+
+    This table is read by GET /api/segments/{name}/users so the dashboard
+    can show predicted_conversion_prob per user. Re-running is safe — rows
+    are upserted by user_id (ON CONFLICT DO UPDATE).
+    """
+    engine = get_engine()
+    rows = preds[["user_id", "current_segment", "conversion_prob",
+                  "confidence_tier", "rank"]].copy()
+    rows["confidence_tier"] = rows["confidence_tier"].astype(str)
+
+    with engine.begin() as conn:
+        for _, row in rows.iterrows():
+            conn.execute(text("""
+                INSERT INTO user_conversion_scores
+                    (user_id, segment_name, conversion_prob, confidence_tier, rank)
+                VALUES
+                    (:uid, :seg::segment_name, :prob, :tier, :rank)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    segment_name    = EXCLUDED.segment_name,
+                    conversion_prob = EXCLUDED.conversion_prob,
+                    confidence_tier = EXCLUDED.confidence_tier,
+                    rank            = EXCLUDED.rank,
+                    computed_at     = now()
+            """), {
+                "uid":  str(row["user_id"]),
+                "seg":  str(row["current_segment"]),
+                "prob": float(row["conversion_prob"]),
+                "tier": str(row["confidence_tier"]),
+                "rank": int(row["rank"]),
+            })
+    print(f"  Upserted {len(rows):,} rows into user_conversion_scores")
+
+
 # ── Summary stats ──────────────────────────────────────────────────────────────
 
 def print_prediction_summary(preds: pd.DataFrame) -> None:
@@ -208,10 +243,14 @@ if __name__ == "__main__":
     csv_path = save_predictions_csv(preds)
     print(f"\n  ✓ Saved {csv_path}")
 
-    print("\n[4/4] Writing top predictor to DB …")
+    print("\n[4/5] Writing scores to DB (user_conversion_scores) …")
+    write_scores_to_db(preds)
+
+    print("\n[5/5] Writing top predictor to DB (ab_test_results) …")
     feat, coef = top_predictor(pipeline, available)
     print(f"  Top predictor: {feat}  (coef = {coef:.4f})")
     write_top_predictor_to_db(feat, coef)
 
     print("\n✓ Prediction pipeline complete.")
     print(f"  Full results: {csv_path}")
+    print("  Scores available via: GET /api/segments/<name>/users")

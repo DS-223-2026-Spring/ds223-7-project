@@ -318,6 +318,20 @@ CREATE INDEX idx_conversion_test     ON conversion_outcomes(test_id);
 CREATE INDEX idx_conversion_campaign ON conversion_outcomes(campaign_id);
 CREATE INDEX idx_conversion_decision ON conversion_outcomes(decision);
 
+-- Milestone 4: per-user ML conversion probability scores (written by predict.py)
+CREATE TABLE IF NOT EXISTS user_conversion_scores (
+    score_id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id          UUID        NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    segment_name     segment_name NOT NULL,
+    conversion_prob  NUMERIC(6,4) NOT NULL CHECK (conversion_prob BETWEEN 0 AND 1),
+    confidence_tier  TEXT        NOT NULL CHECK (confidence_tier IN ('high','medium','low')),
+    rank             INT,
+    computed_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id)
+);
+CREATE INDEX idx_user_scores_segment ON user_conversion_scores(segment_name);
+CREATE INDEX idx_user_scores_prob    ON user_conversion_scores(segment_name, conversion_prob DESC);
+
 
 -- =============================================================================
 -- 8. TRIGGERS
