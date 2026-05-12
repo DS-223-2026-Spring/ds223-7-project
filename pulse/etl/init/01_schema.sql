@@ -744,3 +744,126 @@ LEFT JOIN notification_events ne ON ne.user_id = u.user_id
 LEFT JOIN conversion_outcomes co ON co.user_id = u.user_id
 GROUP BY s.segment_id, s.name, s.label, s.color_hex
 ORDER BY conversion_rate DESC NULLS LAST;
+
+-- =============================================================================
+-- SYNTHETIC USER SEED  (442 free-tier users across 4 segments)
+-- Runs automatically on first docker-compose up --build.
+-- Idempotent: skips if users already exist.
+-- =============================================================================
+DO $$
+DECLARE
+    v_power_id   UUID;
+    v_growing_id UUID;
+    v_casual_id  UUID;
+    v_dormant_id UUID;
+    v_uid        UUID;
+    i            INT;
+    v_seg_id     UUID;
+    v_seg_name   TEXT;
+    v_sessions   NUMERIC;
+    v_exports    NUMERIC;
+    v_paywall    NUMERIC;
+    v_thesaurus  NUMERIC;
+    v_days       INT;
+    v_freq       NUMERIC;
+    v_plan       TEXT;
+BEGIN
+    -- Skip if already seeded
+    IF (SELECT COUNT(*) FROM users) > 10 THEN
+        RAISE NOTICE 'Users already seeded — skipping synthetic data generation.';
+        RETURN;
+    END IF;
+
+    SELECT segment_id INTO v_power_id   FROM segments WHERE name = 'power';
+    SELECT segment_id INTO v_growing_id FROM segments WHERE name = 'growing';
+    SELECT segment_id INTO v_casual_id  FROM segments WHERE name = 'casual';
+    SELECT segment_id INTO v_dormant_id FROM segments WHERE name = 'dormant';
+
+    -- ── 442 users: power=66, growing=110, casual=155, dormant=111 ──────────────
+    FOR i IN 1..442 LOOP
+        v_uid := gen_random_uuid();
+
+        -- Determine segment bucket and behavioural profile
+        IF    i <=  66 THEN          -- power  (~15%)
+            v_seg_id    := v_power_id;
+            v_seg_name  := 'power';
+            v_sessions  := 6 + (random()*4)::INT;
+            v_exports   := 7 + (random()*5)::INT;
+            v_paywall   := 5 + (random()*4)::INT;
+            v_thesaurus := 8 + (random()*6)::INT;
+            v_days      := (random()*10)::INT + 1;
+            v_freq      := 6 + round((random()*3)::NUMERIC, 2);
+            v_plan      := 'free';
+        ELSIF i <= 176 THEN          -- growing (~25%)
+            v_seg_id    := v_growing_id;
+            v_seg_name  := 'growing';
+            v_sessions  := 3 + (random()*4)::INT;
+            v_exports   := 3 + (random()*4)::INT;
+            v_paywall   := 1 + (random()*3)::INT;
+            v_thesaurus := 3 + (random()*5)::INT;
+            v_days      := (random()*20)::INT + 2;
+            v_freq      := 3 + round((random()*2.5)::NUMERIC, 2);
+            v_plan      := 'free';
+        ELSIF i <= 331 THEN          -- casual (~35%)
+            v_seg_id    := v_casual_id;
+            v_seg_name  := 'casual';
+            v_sessions  := 1 + (random()*3)::INT;
+            v_exports   := 1 + (random()*3)::INT;
+            v_paywall   := (random()*2)::INT;
+            v_thesaurus := 1 + (random()*4)::INT;
+            v_days      := (random()*45)::INT + 10;
+            v_freq      := 1 + round((random()*1.5)::NUMERIC, 2);
+            v_plan      := 'free';
+        ELSE                          -- dormant (~25%)
+            v_seg_id    := v_dormant_id;
+            v_seg_name  := 'dormant';
+            v_sessions  := (random()*2)::INT;
+            v_exports   := (random()*2)::INT;
+            v_paywall   := 0;
+            v_thesaurus := (random()*2)::INT;
+            v_days      := (random()*180)::INT + 60;
+            v_freq      := round((random()*0.5)::NUMERIC, 2);
+            v_plan      := 'free';
+        END IF;
+
+        -- Insert user
+        INSERT INTO users (
+            user_id, email, display_name, plan, status,
+            total_sessions, total_exports, total_paywall_hits, total_thesaurus_uses,
+            days_since_last_login, created_at, last_login_at
+        ) VALUES (
+            v_uid,
+            'user_' || i || '@armat.am',
+            'User ' || i,
+            v_plan,
+            'active',
+            v_sessions::INT,
+            v_exports::INT,
+            v_paywall::INT,
+            v_thesaurus::INT,
+            v_days,
+            now() - make_interval(days := v_days + (random()*90)::INT),
+            now() - make_interval(days := v_days)
+        ) ON CONFLICT DO NOTHING;
+
+        -- Assign to segment
+        INSERT INTO user_segments (
+            user_id, segment_id,
+            feature_session_frequency,
+            feature_export_count,
+            feature_paywall_hits_per_week,
+            feature_thesaurus_depth,
+            assigned_at
+        ) VALUES (
+            v_uid, v_seg_id,
+            v_freq,
+            v_exports,
+            round((v_paywall / 7.0)::NUMERIC, 2),
+            round((v_thesaurus / v_sessions)::NUMERIC, 2),
+            now() - make_interval(days := (random()*30)::INT)
+        ) ON CONFLICT DO NOTHING;
+
+    END LOOP;
+
+    RAISE NOTICE 'Seeded 442 synthetic users across 4 segments.';
+END $$;
