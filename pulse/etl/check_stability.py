@@ -4,7 +4,11 @@ Checks that data loading and retrieval remain stable after integration.
 Tests insert, select, update, delete and verifies row counts are consistent.
 
 Run:
+    # Inside Docker (etl container):
     python check_stability.py
+
+    # On host machine:
+    DB_HOST=localhost DB_PORT=5433 python check_stability.py
 """
 
 import os

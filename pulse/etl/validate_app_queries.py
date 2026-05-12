@@ -1,9 +1,14 @@
 """
 Milestone 4 — Issue #109
 Validates that all tables and views support the final app usage.
+Runs every query the API and DS scripts depend on and reports results.
 
 Run:
+    # Inside Docker (etl container):
     python validate_app_queries.py
+
+    # On host machine:
+    DB_HOST=localhost DB_PORT=5433 python validate_app_queries.py
 """
 
 import os
@@ -27,7 +32,7 @@ VALIDATION_QUERIES = {
     "v_segment_behavioral_averages":  "SELECT * FROM v_segment_behavioral_averages",
     "v_ab_test_summary":              "SELECT * FROM v_ab_test_summary",
     "v_segment_ab_comparison":        "SELECT * FROM v_segment_ab_comparison",
-    "v_user_behavioral_features":     "SELECT * FROM v_user_behavioral_features LIMIT 5",
+    "v_user_behavioral_features_m4":  "SELECT * FROM v_user_behavioral_features_m4 LIMIT 5",
     "v_conversion_funnel":            "SELECT * FROM v_conversion_funnel",
     "users":                          "SELECT COUNT(*) FROM users",
     "segments":                       "SELECT COUNT(*) FROM segments",
