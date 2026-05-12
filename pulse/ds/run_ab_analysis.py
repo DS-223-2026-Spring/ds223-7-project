@@ -311,8 +311,8 @@ def upsert_ab_results(conn, results: list[dict]) -> None:
                 :ctrl_rate,   :treat_rate,
                 :lift,
                 :n_samples,   :prob_wins,
-                :sig::significance_level,
-                :winner::ab_group,
+                CAST(:sig AS significance_level),
+                CAST(:winner AS ab_group),
                 now()
             )
             ON CONFLICT (test_id) DO UPDATE SET
