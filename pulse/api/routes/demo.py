@@ -15,7 +15,8 @@ from schema import DemoMessageOut, DemoResponse, DemoRespondResult
 router = APIRouter(prefix="/api/demo", tags=["demo"])
 
 
-@router.get("/message/{segment_name}", response_model=DemoMessageOut)
+@router.get("/message/{segment_name}", response_model=DemoMessageOut,
+            responses={200: {"description": "Rendered upgrade message for the segment"}})
 def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
     """Get the rendered upgrade message for a segment.
 
@@ -68,7 +69,8 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/respond", response_model=DemoRespondResult)
+@router.post("/respond", response_model=DemoRespondResult,
+             responses={200: {"description": "Confirmation that the decision was recorded"}})
 def record_demo_response(payload: DemoResponse, db: Session = Depends(get_db)):
     """Record a user's upgrade / try-later decision from the Demo screen."""
     user = db.execute(

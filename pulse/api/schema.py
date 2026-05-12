@@ -31,6 +31,15 @@ class SegmentBehavioralAvg(BaseModel):
     avg_synonym_depth: float | None = None
     avg_exports: float | None = None
 
+class SegmentUserOut(BaseModel):
+    """One user row in the segment drill-down table."""
+    user_id: str
+    email: str
+    sessions_per_week: float
+    total_exports: int
+    paywall_hits: int
+    days_since_last_session: int
+    predicted_conversion_prob: float | None = None
 
 # ═════════════════════════════════════════════════════════════════════
 # A/B TESTS SCREEN
@@ -42,7 +51,7 @@ class ABTestSummary(BaseModel):
     segment_label: str
     color_hex: str
     test_id: str
-    status: str
+    status: Literal['draft', 'pending', 'running', 'paused', 'completed']
     started_at: datetime | None = None
     ended_at: datetime | None = None
     duration_days: int
@@ -55,7 +64,7 @@ class ABTestSummary(BaseModel):
     treatment_rate: float | None = None
     lift_pct: float | None = None
     p_value: float | None = None
-    significance: str | None = None
+    significance: Literal['significant', 'borderline', 'not_significant'] | None = None
     winning_group: str | None = None
 
 
@@ -67,7 +76,7 @@ class SegmentABComparison(BaseModel):
     control_rate: float | None = None
     treatment_rate: float | None = None
     lift_pct: float | None = None
-    significance: str | None = None
+    significance: Literal['significant', 'borderline', 'not_significant'] | None = None
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -103,9 +112,9 @@ class CampaignOut(BaseModel):
     segment_name: str
     segment_label: str
     color_hex: str
-    channel: str
-    trigger_event: str
-    status: str
+    channel: Literal['in_app_popup', 'push_notification', 'email']
+    trigger_event: Literal['on_paywall_hit', 'on_app_open', 'after_3rd_export']
+    status: Literal['draft', 'pending', 'running', 'paused', 'completed']
     active_message: MessageTemplateOut | None = None
     created_at: datetime
     launched_at: datetime | None = None
@@ -120,8 +129,8 @@ class GlobalParamOut(BaseModel):
 
 class CampaignUpdate(BaseModel):
     """Update the channel and/or trigger of a campaign."""
-    channel: str | None = None
-    trigger_event: str | None = None
+    channel: Literal['in_app_popup', 'push_notification', 'email'] | None = None
+    trigger_event: Literal['on_paywall_hit', 'on_app_open', 'after_3rd_export'] | None = None
 
 
 class MessageUpdate(BaseModel):

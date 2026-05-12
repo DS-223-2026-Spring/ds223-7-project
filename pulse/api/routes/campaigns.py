@@ -77,7 +77,8 @@ _CAMPAIGNS_SQL = text("""
 
 # ── Campaign CRUD ────────────────────────────────────────────────────
 
-@router.get("/campaigns", response_model=list[CampaignOut])
+@router.get("/campaigns", response_model=list[CampaignOut],
+            responses={200: {"description": "All campaigns with active messages"}})
 def list_campaigns(db: Session = Depends(get_db)):
     """All four campaign cards — one per segment — with their active
     message template attached."""
@@ -97,7 +98,8 @@ def list_campaigns(db: Session = Depends(get_db)):
         return []
 
 
-@router.get("/campaigns/{campaign_id}", response_model=CampaignOut)
+@router.get("/campaigns/{campaign_id}", response_model=CampaignOut,
+            responses={200: {"description": "Single campaign details"}})
 def get_campaign(campaign_id: str, db: Session = Depends(get_db)):
     """Single campaign by ID."""
     row = db.execute(
@@ -124,7 +126,8 @@ def get_campaign(campaign_id: str, db: Session = Depends(get_db)):
     return _build_campaign(row, msg_row)
 
 
-@router.put("/campaigns/{campaign_id}", response_model=CampaignOut)
+@router.put("/campaigns/{campaign_id}", response_model=CampaignOut,
+            responses={200: {"description": "Updated campaign"}})
 def update_campaign(
     campaign_id: str, payload: CampaignUpdate, db: Session = Depends(get_db)
 ):
@@ -149,7 +152,8 @@ def update_campaign(
     return get_campaign(campaign_id, db)
 
 
-@router.put("/campaigns/{campaign_id}/message", response_model=CampaignOut)
+@router.put("/campaigns/{campaign_id}/message", response_model=CampaignOut,
+            responses={200: {"description": "Campaign with updated message body"}})
 def update_message(
     campaign_id: str, payload: MessageUpdate, db: Session = Depends(get_db)
 ):
@@ -177,7 +181,8 @@ def update_message(
     return get_campaign(campaign_id, db)
 
 
-@router.post("/campaigns/{campaign_id}/launch", response_model=CampaignOut)
+@router.post("/campaigns/{campaign_id}/launch", response_model=CampaignOut,
+             responses={200: {"description": "Campaign now running"}})
 def launch_campaign(campaign_id: str, db: Session = Depends(get_db)):
     """Set campaign status to 'running' — the Launch A/B test button."""
     db.execute(
@@ -192,7 +197,9 @@ def launch_campaign(campaign_id: str, db: Session = Depends(get_db)):
     return get_campaign(campaign_id, db)
 
 
-@router.delete("/campaigns/{campaign_id}/reset", response_model=CampaignOut)
+@router.delete("/campaigns/{campaign_id}/reset", response_model=CampaignOut,
+               responses={200: {"description": "Campaign reset to draft"}})
+
 def reset_campaign(campaign_id: str, db: Session = Depends(get_db)):
     """Reset campaign back to 'draft'."""
     db.execute(
@@ -209,7 +216,8 @@ def reset_campaign(campaign_id: str, db: Session = Depends(get_db)):
 
 # ── Global Params ────────────────────────────────────────────────────
 
-@router.get("/global-params", response_model=list[GlobalParamOut])
+@router.get("/global-params", response_model=list[GlobalParamOut],
+            responses={200: {"description": "All global parameters"}})
 def list_global_params(db: Session = Depends(get_db)):
     """All shared Campaign Editor params."""
     try:
@@ -221,7 +229,8 @@ def list_global_params(db: Session = Depends(get_db)):
         return []
 
 
-@router.put("/global-params/{key}", response_model=GlobalParamOut)
+@router.put("/global-params/{key}", response_model=GlobalParamOut,
+            responses={200: {"description": "Updated global parameter"}})
 def update_global_param(
     key: str, payload: GlobalParamUpdate, db: Session = Depends(get_db)
 ):

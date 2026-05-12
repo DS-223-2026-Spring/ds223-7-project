@@ -14,7 +14,8 @@ from schema import PlatformKPIs
 router = APIRouter(prefix="/api/kpis", tags=["kpis"])
 
 
-@router.get("", response_model=PlatformKPIs)
+@router.get("", response_model=PlatformKPIs,
+            responses={200: {"description": "Platform-wide KPI metrics"}})
 def get_platform_kpis(db: Session = Depends(get_db)):
     """Top metric row on the KPIs screen — four numbers.
 
