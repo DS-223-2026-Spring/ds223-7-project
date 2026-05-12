@@ -712,7 +712,7 @@ SELECT
     u.total_thesaurus_uses,
     u.days_since_last_login,
     s.name AS segment_name,
-    COALESCE(abt.status, 'not_assigned') AS test_status,
+    COALESCE(abt.status::text, 'not_assigned') AS test_status,
     COALESCE(aa.group_type::text, 'unassigned') AS ab_group
 FROM users u
 LEFT JOIN user_segments us ON us.user_id = u.user_id AND us.expires_at IS NULL
