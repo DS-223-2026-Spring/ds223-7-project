@@ -83,10 +83,11 @@ def get_segment_users(name: str, db: Session = Depends(get_db)):
                     COALESCE(u.total_exports, 0)                  AS total_exports,
                     COALESCE(u.total_paywall_hits, 0)             AS paywall_hits,
                     COALESCE(u.days_since_last_login, 999)        AS days_since_last_session,
-                    NULL                                           AS predicted_conversion_prob  -- TODO: LEFT JOIN user_conversion_scores when DS pipeline populates it
+                    ucs.conversion_prob                           AS predicted_conversion_prob
                 FROM users u
                 JOIN user_segments us ON us.user_id = u.user_id AND us.expires_at IS NULL
                 JOIN segments s       ON s.segment_id = us.segment_id
+                LEFT JOIN user_conversion_scores ucs ON ucs.user_id = u.user_id
                 WHERE s.name = :seg_name
                 ORDER BY us.feature_session_frequency DESC NULLS LAST
                 LIMIT 50

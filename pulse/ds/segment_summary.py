@@ -61,7 +61,7 @@ def load_segment_behavioral(conn) -> pd.DataFrame:
             s.label,
             s.color_hex,
             COUNT(us.user_id)                               AS user_count,
-            ROUND(AVG(us.feature_sessions_per_week), 2)    AS avg_sessions_per_week,
+            ROUND(AVG(us.feature_session_frequency), 2)    AS avg_sessions_per_week,
             ROUND(AVG(u.total_exports), 1)                  AS avg_exports,
             ROUND(AVG(u.total_paywall_hits), 1)             AS avg_paywall_hits
         FROM segments s
