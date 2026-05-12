@@ -859,7 +859,7 @@ BEGIN
             v_freq,
             v_exports,
             round((v_paywall / 7.0)::NUMERIC, 2),
-            round((v_thesaurus / v_sessions)::NUMERIC, 2),
+            round((v_thesaurus / NULLIF(v_sessions, 0))::NUMERIC, 2),
             now() - make_interval(days := (random()*30)::INT)
         ) ON CONFLICT DO NOTHING;
 
