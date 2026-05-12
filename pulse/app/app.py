@@ -1,4 +1,4 @@
-"""Pulse Dashboard — Streamlit frontend (Milestone 3: mock data with API fallback).
+"""Pulse Dashboard — Streamlit frontend (Milestone 4: API integration + visualizations).
 
 Screens match PM endpoint specs from issues #67 and #68:
   Segments   — /api/segments/counts + /api/segments/behavioral-averages
@@ -13,6 +13,7 @@ import os
 
 import requests
 import streamlit as st
+import altair as alt
 import pandas as pd
 
 # FIX 1: API infrastructure
@@ -79,6 +80,14 @@ SEGMENT_BEHAVIORAL = [
     {"segment_name": "casual",  "avg_sessions_per_week": 2.3, "avg_exports": 1.8, "avg_paywall_hits": 0.6},
     {"segment_name": "dormant", "avg_sessions_per_week": 0.4, "avg_exports": 0.2, "avg_paywall_hits": 0.0},
 ]
+
+# /api/segments/{name}/users (M4 — new endpoint from #114)
+SEGMENT_USERS_MOCK = {
+    "power":   [{"user_id": i, "name": f"Power User {i}", "exports": 9+i%4, "sessions": 8+i%3} for i in range(1, 6)],
+    "growing": [{"user_id": i, "name": f"Growing User {i}", "exports": 4+i%3, "sessions": 5+i%2} for i in range(1, 6)],
+    "casual":  [{"user_id": i, "name": f"Casual User {i}", "exports": 1+i%2, "sessions": 2+i%2} for i in range(1, 6)],
+    "dormant": [{"user_id": i, "name": f"Dormant User {i}", "exports": 0, "sessions": 0+i%2} for i in range(1, 6)],
+}
 
 # FIX 2b: /api/ab-tests/summary — fix "not significant" → "not_significant"
 AB_SUMMARY = [
@@ -197,7 +206,8 @@ with st.sidebar:
         label_visibility="collapsed",
     )
     st.divider()
-    st.caption("Milestone 3 — API with mock fallback")
+    st.caption("v1.0 — Milestone 4")
+    st.markdown("[Documentation](https://ds-223-2026-spring.github.io/ds223-7-project/)")
 
 # ────────────────────────────────────────────────────────────────────────────────
 #  SEGMENTS  —  /api/segments/counts  +  /api/segments/behavioral-averages
@@ -263,6 +273,25 @@ if page == "Segments":
         c2.caption("Avg Exports")
         c3.bar_chart(df_beh.set_index("segment_name")["avg_paywall_hits"])
         c3.caption("Avg Paywall Hits")
+
+
+    st.divider()
+
+    # Section 3: Top Users per segment  (/api/segments/{name}/users) — M4
+    st.subheader("Top Users by Segment")
+    selected_seg = st.selectbox(
+        "View users for segment",
+        [s["segment_name"] for s in segments],
+        format_func=lambda x: x.title(),
+        key="seg_users_select",
+    )
+    users_data = api_get(f"/api/segments/{selected_seg}/users")
+    if users_data is None:
+        users_data = SEGMENT_USERS_MOCK.get(selected_seg, [])
+        st.caption("⚠️ Using demo data — backend unavailable")
+    if users_data:
+        st.subheader(f"Top Users — {selected_seg.title()}")
+        st.dataframe(pd.DataFrame(users_data), use_container_width=True, hide_index=True)
 
 # ────────────────────────────────────────────────────────────────────────────────
 #  A/B TESTS  —  /api/ab-tests/summary  +  /api/ab-tests/comparison
@@ -340,6 +369,8 @@ elif page == "A/B Tests":
                 df_display["Treatment Rate"] = df_display["Treatment Rate"].map(lambda x: f"{x:.1%}" if x is not None else "—")
             if "Lift %" in df_display.columns:
                 df_display["Lift %"] = df_display["Lift %"].map(lambda x: f"+{x:.1f}%" if x is not None else "—")
+            if "Status" in df_display.columns:
+                df_display["Status"] = df_display["Status"].str.title()
             st.dataframe(df_display, use_container_width=True, hide_index=True)
         else:
             st.info("No results match the selected filters.")
@@ -371,6 +402,27 @@ elif page == "A/B Tests":
             use_container_width=True,
             hide_index=True,
         )
+        st.divider()
+        st.subheader("Control vs Treatment Rates")
+        if not df_cmp.empty:
+            _ctrl  = df_cmp[["segment_name", "control_rate"]].assign(Variant="Control").rename(columns={"control_rate": "Rate", "segment_name": "Segment"})
+            _trt   = df_cmp[["segment_name", "treatment_rate"]].assign(Variant="Treatment").rename(columns={"treatment_rate": "Rate", "segment_name": "Segment"})
+            _long  = pd.concat([_ctrl, _trt], ignore_index=True)
+            _long["Segment"] = _long["Segment"].str.title()
+            _chart = (
+                alt.Chart(_long)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Segment:N", axis=alt.Axis(labelAngle=0)),
+                    y=alt.Y("Rate:Q", axis=alt.Axis(format=".0%")),
+                    color=alt.Color("Variant:N", scale=alt.Scale(range=["#3b82f6", "#f97316"])),
+                    xOffset="Variant:N",
+                    tooltip=["Segment", "Variant", alt.Tooltip("Rate:Q", format=".1%")],
+                )
+                .properties(height=280, title="Control vs Treatment Conversion Rate")
+            )
+            st.altair_chart(_chart, use_container_width=True)
+        
         st.caption("Data from /api/ab-tests/comparison")
 
 # ────────────────────────────────────────────────────────────────────────────────
