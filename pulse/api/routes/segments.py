@@ -10,7 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from database import get_db
-from schema import SegmentCount, SegmentBehavioralAvg
+from schema import SegmentCount, SegmentBehavioralAvg, SegmentUserOut
 
 router = APIRouter(prefix="/api/segments", tags=["segments"])
 
@@ -22,7 +22,8 @@ SEGMENT_COLORS = {
 }
 
 
-@router.get("/counts", response_model=list[SegmentCount])
+@router.get("/counts", response_model=list[SegmentCount],
+            responses={200: {"description": "List of segments with user counts"}})
 def get_segment_counts(db: Session = Depends(get_db)):
     """Four KPI cards on the Segments screen.
 
@@ -36,7 +37,8 @@ def get_segment_counts(db: Session = Depends(get_db)):
         return []
 
 
-@router.get("/behavioral-averages", response_model=list[SegmentBehavioralAvg])
+@router.get("/behavioral-averages", response_model=list[SegmentBehavioralAvg],
+            responses={200: {"description": "Average behavioral metrics per segment"}})
 def get_behavioral_averages(db: Session = Depends(get_db)):
     """Bar-chart data on the Segments screen.
 
@@ -59,5 +61,38 @@ def get_behavioral_averages(db: Session = Depends(get_db)):
             )
             for r in rows
         ]
+    except Exception:
+        return []
+
+@router.get("/{name}/users", response_model=list[SegmentUserOut],
+            responses={200: {"description": "Up to 50 users in the given segment"}})
+def get_segment_users(name: str, db: Session = Depends(get_db)):
+    """Drill-down: up to 50 users in the given segment.
+
+    Path parameter `name` must match a segment name exactly
+    (Power, Growing, Casual, Dormant).
+    Queries base tables (users, user_segments, segments) per PM spec.
+    """
+    try:
+        rows = db.execute(
+            text("""
+                SELECT
+                    u.user_id::text,
+                    u.email,
+                    COALESCE(us.feature_session_frequency, 0)    AS sessions_per_week,
+                    COALESCE(u.total_exports, 0)                  AS total_exports,
+                    COALESCE(u.total_paywall_hits, 0)             AS paywall_hits,
+                    COALESCE(u.days_since_last_login, 999)        AS days_since_last_session,
+                    NULL                                           AS predicted_conversion_prob
+                FROM users u
+                JOIN user_segments us ON us.user_id = u.user_id AND us.expires_at IS NULL
+                JOIN segments s       ON s.segment_id = us.segment_id
+                WHERE s.name = :seg_name
+                ORDER BY us.feature_session_frequency DESC NULLS LAST
+                LIMIT 50
+            """),
+            {"seg_name": name},
+        ).mappings().all()
+        return [SegmentUserOut(**r) for r in rows]
     except Exception:
         return []

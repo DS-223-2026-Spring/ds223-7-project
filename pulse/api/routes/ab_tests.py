@@ -15,7 +15,11 @@ from schema import ABTestSummary, SegmentABComparison
 router = APIRouter(prefix="/api/ab-tests", tags=["ab-tests"])
 
 
-@router.get("/summary", response_model=list[ABTestSummary])
+@router.get("/summary", response_model=list[ABTestSummary],
+            responses={200: {"description": "A/B test results per segment"}})
+
+@router.get("/comparison", response_model=list[SegmentABComparison],
+            responses={200: {"description": "Control vs treatment comparison per segment"}})
 def get_ab_test_summary(db: Session = Depends(get_db)):
     """Cards on the A/B Tests screen — one per segment test.
 
