@@ -506,7 +506,8 @@ SELECT
 FROM ab_test_results r
 JOIN ab_tests t ON t.test_id    = r.test_id
 JOIN segments s ON s.segment_id = t.segment_id
-WHERE t.status = 'completed'
+WHERE r.control_rate IS NOT NULL
+  AND r.treatment_rate IS NOT NULL
 ORDER BY r.lift_pct DESC NULLS LAST;
 
 CREATE OR REPLACE VIEW v_platform_kpis AS
