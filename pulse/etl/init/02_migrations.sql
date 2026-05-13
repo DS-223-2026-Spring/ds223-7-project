@@ -1,6 +1,8 @@
 -- =============================================================================
 -- MIGRATION: Milestone 4 additions
 -- Safe to run on existing databases (uses CREATE OR REPLACE / IF NOT EXISTS)
+-- Run this manually on existing databases:
+--   docker exec db psql -U pulse_user -d pulse -f /docker-entrypoint-initdb.d/02_migrations.sql
 -- =============================================================================
 
 -- Add control_message_id to campaigns if not already present
@@ -14,6 +16,24 @@ BEGIN
         ALTER TABLE campaigns ADD COLUMN control_message_id UUID;
     END IF;
 END $$;
+
+-- New table: user conversion scores (written by DS prediction pipeline)
+CREATE TABLE IF NOT EXISTS user_conversion_scores (
+    score_id        UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID         NOT NULL REFERENCES users(user_id),
+    segment_name    segment_name NOT NULL,
+    conversion_prob NUMERIC(6,4) NOT NULL CHECK (conversion_prob BETWEEN 0 AND 1),
+    confidence_tier TEXT         NOT NULL CHECK (confidence_tier IN ('high','medium','low')),
+    rank            INT,
+    computed_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    UNIQUE (user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_conversion_scores_segment
+    ON user_conversion_scores(segment_name);
+
+CREATE INDEX IF NOT EXISTS idx_user_conversion_scores_user
+    ON user_conversion_scores(user_id);
 
 -- View: enriched user behavioral features for DS pipeline
 CREATE OR REPLACE VIEW v_user_behavioral_features_m4 AS
