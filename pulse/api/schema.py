@@ -169,3 +169,9 @@ class DemoRespondResult(BaseModel):
     decision: Literal['upgraded', 'try_later', 'dismissed']
     ab_group: Literal['control', 'treatment']
     segment: str
+
+
+class RunAnalysisResult(BaseModel):
+    """Response from POST /api/ab-tests/run-analysis."""
+    segments_analyzed: int
+    message: str

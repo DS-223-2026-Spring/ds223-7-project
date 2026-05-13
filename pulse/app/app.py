@@ -300,6 +300,19 @@ elif page == "A/B Tests":
     st.title("A/B Tests")
     st.caption("Control vs. treatment conversion performance per segment")
 
+    # ── Recalculate button ────────────────────────────────────────────
+    col_title, col_btn = st.columns([4, 1])
+    with col_btn:
+        if st.button("🔄 Recalculate", type="primary", use_container_width=True,
+                     help="Re-run Thompson Sampling on the latest conversion data"):
+            with st.spinner("Running Thompson Sampling…"):
+                result = api_post("/api/ab-tests/run-analysis", {})
+            if result:
+                st.success(result.get("message", "Analysis complete!"))
+                st.rerun()
+            else:
+                st.error("Analysis failed — backend unavailable.")
+
     # FIX 8: wire real API calls with mock fallback
     raw_summary = api_get("/api/ab-tests/summary")
     ab_summary = raw_summary if raw_summary else AB_SUMMARY
