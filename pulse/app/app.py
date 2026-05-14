@@ -728,19 +728,27 @@ elif page == "User Demo":
                 st.info("Recorded (demo mode — backend unavailable).")
 
     with stats_col:
-        # Response stats  (aggregated from /api/demo/respond)
+        # Response stats  (live from /api/demo/stats)
         st.subheader("Response Stats by Segment")
-        df_resp = pd.DataFrame(DEMO_RESPONSES)
-        df_pivot = df_resp.pivot(index="segment_name", columns="response", values="count").fillna(0).astype(int)
-        df_pivot.index = df_pivot.index.str.title()
-        df_pivot.columns = [col.title() for col in df_pivot.columns]
-        df_pivot["Total"] = df_pivot.sum(axis=1)
-        if "Upgraded" in df_pivot.columns:
-            df_pivot["Upgrade Rate"] = (df_pivot["Upgraded"] / df_pivot["Total"]).map(lambda x: f"{x:.0%}")
-        st.dataframe(df_pivot, use_container_width=True)
-        st.caption("Aggregated responses from /api/demo/respond")
-        if "Upgraded" in df_pivot.columns:
-            st.bar_chart(
-                df_resp[df_resp["response"] == "upgraded"].set_index("segment_name")["count"]
-            )
-            st.caption("Upgrade counts by segment")
+        live_stats = api_get("/api/demo/stats")
+        if live_stats:
+            df_resp = pd.DataFrame(live_stats)
+        else:
+            df_resp = pd.DataFrame(DEMO_RESPONSES)
+            st.caption("⚠️ Using demo data — backend unavailable")
+        if not df_resp.empty:
+            df_pivot = df_resp.pivot(index="segment_name", columns="response", values="count").fillna(0).astype(int)
+            df_pivot.index = df_pivot.index.str.title()
+            df_pivot.columns = [col.title() for col in df_pivot.columns]
+            df_pivot["Total"] = df_pivot.sum(axis=1)
+            if "Upgraded" in df_pivot.columns:
+                df_pivot["Upgrade Rate"] = (df_pivot["Upgraded"] / df_pivot["Total"]).map(lambda x: f"{x:.0%}")
+            st.dataframe(df_pivot, use_container_width=True)
+            st.caption("Live data from conversion_outcomes · GET /api/demo/stats")
+            if "Upgraded" in df_pivot.columns:
+                st.bar_chart(
+                    df_resp[df_resp["response"] == "upgraded"].set_index("segment_name")["count"]
+                )
+                st.caption("Upgrade counts by segment")
+        else:
+            st.info("No responses recorded yet — click Upgraded or Dismissed to start.")

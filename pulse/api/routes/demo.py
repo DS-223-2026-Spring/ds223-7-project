@@ -3,6 +3,7 @@ User Demo screen endpoints.
 
 GET  /api/demo/message/{segment_name}  → rendered upgrade message
 POST /api/demo/respond                 → record user decision
+GET  /api/demo/stats                   → live response counts per segment
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,6 +14,29 @@ from database import get_db
 from schema import DemoMessageOut, DemoResponse, DemoRespondResult
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])
+
+
+# ── GET /api/demo/stats ──────────────────────────────────────────────────────
+
+@router.get("/stats", response_model=list[dict])
+def get_demo_stats(db: Session = Depends(get_db)):
+    """Live response counts from conversion_outcomes, grouped by segment + decision."""
+    try:
+        rows = db.execute(text("""
+            SELECT
+                s.name          AS segment_name,
+                co.decision     AS response,
+                COUNT(*)        AS count
+            FROM conversion_outcomes co
+            JOIN users u        ON u.user_id    = co.user_id
+            JOIN user_segments us ON us.user_id = u.user_id AND us.expires_at IS NULL
+            JOIN segments s     ON s.segment_id = us.segment_id
+            GROUP BY s.name, co.decision
+            ORDER BY s.name, co.decision
+        """)).mappings().all()
+        return [{"segment_name": r["segment_name"], "response": r["response"], "count": int(r["count"])} for r in rows]
+    except Exception:
+        return []
 
 
 @router.get("/message/{segment_name}", response_model=DemoMessageOut,
