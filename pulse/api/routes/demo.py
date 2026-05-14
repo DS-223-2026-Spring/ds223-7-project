@@ -58,23 +58,28 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
     If campaign is not running → frontend shows only the control message.
     Also returns a random assigned user (user_id + test_id) for attribution.
     """
-    # Pick one random ab-assigned user (for test_id / attribution)
-    assignment = db.execute(
+    # Pick one random user per group so control and treatment clicks
+    # are attributed to users who are actually in that group.
+    assignments = db.execute(
         text("""
-            SELECT aa.user_id, aa.test_id
+            SELECT DISTINCT ON (aa.group_type) aa.user_id, aa.test_id, aa.group_type
             FROM ab_assignments aa
             JOIN ab_tests t ON t.test_id    = aa.test_id
             JOIN segments s ON s.segment_id = t.segment_id
             WHERE s.name = :seg
-            ORDER BY random()
-            LIMIT 1
+            ORDER BY aa.group_type, random()
         """),
         {"seg": segment_name},
-    ).mappings().first()
+    ).mappings().all()
 
-    if not assignment:
+    if not assignments:
         raise HTTPException(status_code=404,
                             detail=f"No A/B assignments found for segment '{segment_name}'")
+
+    by_group = {r["group_type"]: r for r in assignments}
+    ctrl_user  = by_group.get("control")
+    treat_user = by_group.get("treatment")
+    test_id    = assignments[0]["test_id"]
 
     row = db.execute(
         text("""
@@ -114,8 +119,9 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
         trigger_event=row["trigger_event"],
         control_body=_render(row["control_body"], param_map),
         treatment_body=_render(row["treatment_body"] or "", param_map),
-        user_id=str(assignment["user_id"]),
-        test_id=str(assignment["test_id"]),
+        control_user_id=str(ctrl_user["user_id"]) if ctrl_user else "",
+        treatment_user_id=str(treat_user["user_id"]) if treat_user else "",
+        test_id=str(test_id),
     )
 
 

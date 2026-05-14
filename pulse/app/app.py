@@ -649,14 +649,15 @@ elif page == "User Demo":
 
         raw_demo = api_get(f"/api/demo/message/{seg}")
         if raw_demo:
-            campaign_status = raw_demo.get("campaign_status", "draft")
-            user_id         = raw_demo.get("user_id", "")
-            test_id         = raw_demo.get("test_id", "")
-            control_body    = raw_demo.get("control_body") or DEMO_MESSAGES.get(seg, "")
-            treatment_body  = raw_demo.get("treatment_body") or DEMO_MESSAGES.get(seg, "")
+            campaign_status   = raw_demo.get("campaign_status", "draft")
+            control_user_id   = raw_demo.get("control_user_id", "")
+            treatment_user_id = raw_demo.get("treatment_user_id", "")
+            test_id           = raw_demo.get("test_id", "")
+            control_body      = raw_demo.get("control_body") or DEMO_MESSAGES.get(seg, "")
+            treatment_body    = raw_demo.get("treatment_body") or DEMO_MESSAGES.get(seg, "")
         else:
             campaign_status = "draft"
-            user_id = test_id = ""
+            control_user_id = treatment_user_id = test_id = ""
             control_body = treatment_body = DEMO_MESSAGES.get(seg, "")
 
         is_running = campaign_status == "running"
@@ -671,13 +672,13 @@ elif page == "User Demo":
                 if st.button("Accept Upgrade", key="btn_accept_ctrl", use_container_width=True):
                     api_post("/api/demo/respond", {
                         "segment_name": seg, "decision": "upgraded",
-                        "ab_group": "control", "user_id": user_id, "test_id": test_id,
+                        "ab_group": "control", "user_id": control_user_id, "test_id": test_id,
                     })
                     st.rerun()
                 if st.button("Dismiss", key="btn_dismiss_ctrl", use_container_width=True):
                     api_post("/api/demo/respond", {
                         "segment_name": seg, "decision": "try_later",
-                        "ab_group": "control", "user_id": user_id, "test_id": test_id,
+                        "ab_group": "control", "user_id": control_user_id, "test_id": test_id,
                     })
                     st.rerun()
             with treat_col:
@@ -687,13 +688,13 @@ elif page == "User Demo":
                 if st.button("Accept Upgrade", key="btn_accept_treat", type="primary", use_container_width=True):
                     api_post("/api/demo/respond", {
                         "segment_name": seg, "decision": "upgraded",
-                        "ab_group": "treatment", "user_id": user_id, "test_id": test_id,
+                        "ab_group": "treatment", "user_id": treatment_user_id, "test_id": test_id,
                     })
                     st.rerun()
                 if st.button("Dismiss", key="btn_dismiss_treat", use_container_width=True):
                     api_post("/api/demo/respond", {
                         "segment_name": seg, "decision": "try_later",
-                        "ab_group": "treatment", "user_id": user_id, "test_id": test_id,
+                        "ab_group": "treatment", "user_id": treatment_user_id, "test_id": test_id,
                     })
                     st.rerun()
         else:

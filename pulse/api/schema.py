@@ -157,7 +157,9 @@ class DemoMessageOut(BaseModel):
     trigger_event: str
     control_body: str
     treatment_body: str
-    user_id: str
+    # Separate user IDs — one from each group — for correct attribution
+    control_user_id: str
+    treatment_user_id: str
     test_id: str
 
 
