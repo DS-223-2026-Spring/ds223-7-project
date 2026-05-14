@@ -339,7 +339,7 @@ elif page == "A/B Tests":
         )
         status_filter = f2.selectbox(
             "Filter by status",
-            ["All", "running", "pending", "complete"],
+            ["All", "running", "pending", "completed", "cancelled"],
             key="ab_status_filter",
         )
 

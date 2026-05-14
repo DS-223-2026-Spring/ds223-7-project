@@ -71,7 +71,9 @@ def _thompson_sampling(ctrl_conv: int, ctrl_total: int,
 
 
 def _significance_to_status(sig: str) -> str:
-    return "completed" if sig == "significant" else "running"
+    # Significance means we found a winner, but the test keeps running
+    # until the user explicitly stops it — so always return "running".
+    return "running"
 
 
 # ── GET /api/ab-tests/summary ────────────────────────────────────────────────
