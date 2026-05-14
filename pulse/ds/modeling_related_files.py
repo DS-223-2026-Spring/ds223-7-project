@@ -5,7 +5,7 @@ Data Scientist: Silva Vardanyan
 This module contains reusable functions for:
   - Connecting to the database
   - Loading user behavioral features from v_user_behavioral_features
-  - Running the segmentation model
+  - Running the K-Means segmentation model
   - Computing A/B test significance via Thompson Sampling (Bayesian)
 
 Used by experiments.ipynb.
@@ -13,6 +13,7 @@ Used by experiments.ipynb.
 
 import os
 import pandas as pd
+import numpy as np
 from sqlalchemy import create_engine, text
 
 # ── Database connection ───────────────────────────────────────────────
@@ -41,16 +42,38 @@ def load_behavioral_features() -> pd.DataFrame:
         )
 
 
-# ── Segmentation ──────────────────────────────────────────────────────
+# ── Segmentation (K-Means) ────────────────────────────────────────────
+
+def kmeans_segment(df: pd.DataFrame) -> pd.Series:
+    """Assign segments to all users using K-Means clustering (k=4).
+
+    Delegates to segment_kmeans.run_kmeans(), which:
+        1. Scales the 8 behavioral features (impute median → StandardScaler)
+        2. Fits KMeans(k=4, n_init=20) for stable centroids
+        3. Maps each cluster to a named segment by inspecting centroids:
+               dormant  — highest days_since_last_login
+               power    — highest total_exports + total_paywall_hits
+               growing  — highest sessions_per_week (from remaining)
+               casual   — the leftover cluster
+
+    Parameters
+    ----------
+    df : DataFrame — output of load_behavioral_features(), one row per user
+
+    Returns
+    -------
+    pd.Series of segment names (same index as df)
+    """
+    from segment_kmeans import run_kmeans, save_kmeans_model
+    _, labels, mapping = run_kmeans(df)
+    save_kmeans_model(_)
+    return pd.Series([mapping[lbl] for lbl in labels], index=df.index)
+
 
 def assign_segment(row: pd.Series) -> str:
-    """Rule-based segment assignment for a single user row.
+    """Deprecated — rule-based fallback, kept for backward compatibility.
 
-    Segments:
-        power    — high exports + frequent paywall hits
-        growing  — rising sessions, below paywall threshold
-        casual   — low frequency, high template interest
-        dormant  — no activity in 30+ days
+    Use kmeans_segment(df) instead for data-driven segmentation.
     """
     if row.get("days_since_last_login", 999) > 30:
         return "dormant"
