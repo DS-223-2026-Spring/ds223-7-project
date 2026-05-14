@@ -443,10 +443,10 @@ elif page == "KPIs":
         horizontal=True,
         key="kpi_period",
     )
+    period_days = {"Last 7 days": 7, "Last 30 days": 30, "Last 90 days": 90}[kpi_period]
     st.divider()
 
-    # FIX 8: wire real API call with mock fallback
-    raw_kpis = api_get("/api/kpis")
+    raw_kpis = api_get("/api/kpis", period=period_days)
     kpis = raw_kpis if raw_kpis else KPIS
 
     # FIX 5: use real PlatformKPIs field names
@@ -454,17 +454,14 @@ elif page == "KPIs":
     k1.metric(
         "Overall Conversion Rate",
         f'{kpis["overall_conversion_rate"]:.1%}' if kpis.get("overall_conversion_rate") is not None else "—",
-        delta="+1.1% vs last period",
     )
     k2.metric(
         "Churn Rate 30d",
         f'{kpis["churn_rate_30d"]:.1%}' if kpis.get("churn_rate_30d") is not None else "—",
-        delta="-0.1% vs last period",
     )
     k3.metric(
         "Avg Revenue (AMD)",
         f'{kpis["avg_revenue_amd"]:,.0f}' if kpis.get("avg_revenue_amd") is not None else "—",
-        delta="+50 AMD vs last period",
     )
     st.divider()
 
@@ -473,7 +470,6 @@ elif page == "KPIs":
     k4.metric(
         "Notification Engagement Rate",
         f'{kpis["notification_engagement_rate"]:.0%}' if kpis.get("notification_engagement_rate") is not None else "—",
-        delta="+4% vs last period",
     )
 
 # ────────────────────────────────────────────────────────────────────────────────
