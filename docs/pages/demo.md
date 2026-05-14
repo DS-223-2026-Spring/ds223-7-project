@@ -1,19 +1,104 @@
-# Demo Walkthrough
+# Pulse — Full Project Demo
 
-**Stack:** Streamlit · FastAPI · PostgreSQL · Docker Compose  
-**Start:** `docker-compose up --build` → open [http://localhost:8501](http://localhost:8501)
+**DS-223 Marketing Analytics · Group 7 · Spring 2026**  
+**Team:** Silva Vardanyan (PM) · Albert Hakobyan (Backend) · Anzhelika Simonyan (Frontend) · Narek Dilbaryan (DB)
 
 ---
 
-## Segments
+## The Problem
 
-The first screen shows who Mer Lezun's free users are, broken into four behavioral clusters produced by **K-Means (k=4)**.
+**Mer Lezun** is an Armenian writing and document-export SaaS on a freemium model. Free users can create documents and export them but hit feature limits on the free plan. Converting these users to **Pro (AMD 2,900/month)** is the core business challenge.
 
-**What you see:**
+**Before Pulse, Mer Lezun had no:**
 
-- **Segment counts bar chart** — live from `GET /api/segments/counts`
-- **Behavioral Averages table** — sessions/week, exports, paywall hits per segment, from `GET /api/segments/behavioral-averages`
-- **Per-user breakdown table** — each user's predicted conversion probability from the ML model, from `GET /api/segments/{name}/users`
+- Segmentation — all free users treated identically
+- Campaign tooling — no interface to write or launch targeted messages
+- A/B testing — no way to learn which message converts best
+- Conversion analytics — no real-time dashboard
+
+**Result:** generic, ineffective upgrade campaigns with no feedback loop.
+
+---
+
+## The Solution
+
+**Pulse** is a free-to-paid conversion analytics platform built for Mer Lezun's PM team. It:
+
+1. **Segments** 442 free users into 4 behavioral groups using K-Means clustering
+2. **Lets PMs** craft and launch targeted in-app upgrade messages per segment
+3. **Runs A/B tests** — control (generic message) vs. treatment (campaign message) — using Beta-Binomial Thompson Sampling
+4. **Tracks KPIs** — conversion rate, churn, revenue, notification engagement — in a live dashboard
+5. **Simulates user responses** via the User Demo screen, feeding real interaction data back into the ML pipeline
+
+---
+
+## Architecture
+
+**6-container Docker Compose stack. One command to start everything:**
+
+```bash
+docker-compose up --build
+```
+
+### Containers
+
+| Container | Technology | Port | Role |
+|-----------|-----------|------|------|
+| `db` | PostgreSQL 16 | 5433 | Primary database — 15 tables, 6 views, triggers, enums |
+| `back` | FastAPI + SQLAlchemy | 8008 | REST API — 18 endpoints |
+| `front` | Streamlit | 8501 | PM dashboard — 5 screens |
+| `ds` | Python + Jupyter | 8888 | DS pipeline + notebooks |
+| `etl` | Python | — | One-time seed — exits after run |
+| `pgadmin` | pgAdmin 4 | 5050 | DB admin UI |
+
+### Data Flow
+
+```
+Browser → Streamlit (front) → FastAPI (back) → PostgreSQL (db)
+                                                      ↑
+                              ETL seeds once on startup
+                              DS pipeline writes segments, scores, A/B results
+```
+
+**Rule:** DS writes to DB. Backend reads from DB and handles user actions. Frontend only calls backend. No layer skips a level.
+
+### Startup Sequence
+
+```
+docker-compose up --build
+  ├── db          → starts, runs health check
+  ├── etl         → loads schema, seeds 442 users, campaigns, templates → exits
+  ├── back        → FastAPI serves on :8008
+  ├── front       → Streamlit serves on :8501
+  └── ds          → seed_events.py → segment_kmeans.py → run_ab_analysis.py → Jupyter
+```
+
+---
+
+## Segmentation — K-Means (k=4)
+
+Users are clustered on **7 behavioral features:**
+
+| Feature | What it measures |
+|---------|-----------------|
+| `total_sessions` | Lifetime visits |
+| `total_exports` | Lifetime document exports |
+| `total_paywall_hits` | Times user hit a Pro feature limit |
+| `total_thesaurus_uses` | Writing depth — synonym queries |
+| `days_since_last_login` | Recency / churn risk |
+| `sessions_per_week` | Rolling 30-day activity |
+| `paywall_hits_last_7d` | Immediate upgrade pressure |
+
+**Pipeline:** `SimpleImputer(median)` → `StandardScaler` → `KMeans(k=4, n_init=20)`
+
+**Cluster naming** — by inspecting centroids in order:
+
+1. Highest `days_since_last_login` → **Dormant**
+2. Highest `total_exports + total_paywall_hits` → **Power**
+3. Highest `sessions_per_week` → **Growing**
+4. Remaining → **Casual**
+
+**Result:**
 
 | Segment | Users | Sessions/week | Avg Exports | Paywall Hits |
 |---------|-------|--------------|-------------|--------------|
@@ -22,141 +107,101 @@ The first screen shows who Mer Lezun's free users are, broken into four behavior
 | Casual | 176 | 0.3 | 2.0 | 0.1 |
 | Dormant | 93 | 0.0 | 1.0 | 0.0 |
 
-**How K-Means assigns segments:**  
-The model fits on 7 behavioral features (`total_sessions`, `total_exports`, `total_paywall_hits`, `total_thesaurus_uses`, `days_since_last_login`, `sessions_per_week`, `paywall_hits_last_7d`), then maps each cluster to a name by inspecting centroids:
+---
 
-1. Highest `days_since_last_login` → **Dormant**
-2. Highest `total_exports + total_paywall_hits` → **Power**
-3. Highest `sessions_per_week` → **Growing**
-4. Remaining → **Casual**
+## Conversion Scoring — ML Model
+
+Each user gets a **conversion probability score (0–1)** from a binary classifier trained on the same 7 features.
+
+Two models compete on 5-fold stratified CV ROC-AUC. Winner saved to `outputs/final_model.pkl`.
+
+| Model | Tuning |
+|-------|--------|
+| Logistic Regression | C, solver, L2 penalty |
+| Random Forest | n_estimators, max_depth, min_samples_leaf |
+
+Both use `class_weight='balanced'` to handle class imbalance (most users haven't converted).
+
+Output per user: `conversion_prob`, `confidence_tier` (high/medium/low), `rank`.
 
 ---
 
-## A/B Tests
+## A/B Testing — Thompson Sampling
 
-Thompson Sampling A/B test results — control vs. treatment conversion rates per segment.
+For each segment, the engine compares control vs. treatment conversion rates using **Beta-Binomial Thompson Sampling:**
 
-**What you see:**
+```python
+ctrl_samples  = Beta(conversions_ctrl + 1,  non_conversions_ctrl + 1,  10_000 draws)
+treat_samples = Beta(conversions_treat + 1, non_conversions_treat + 1, 10_000 draws)
 
-- **Summary cards** — one per segment showing status, control rate, treatment rate, lift %, and whether the test is significant
-- **Variant Comparison table** — side-by-side breakdown across all segments
-- **Recalculate button** — re-runs Thompson Sampling on the latest `conversion_outcomes` data immediately (`POST /api/ab-tests/run-analysis`)
-
-**When is a test significant?**  
-The model draws 10,000 samples from `Beta(conversions+1, non-conversions+1)` for each variant. When `P(treatment wins) ≥ 0.95`, the test is marked **significant** — meaning the treatment message is confidently better than the control.
-
-Data sources: `GET /api/ab-tests/summary`, `GET /api/ab-tests/comparison`
-
----
-
-## KPIs
-
-Platform-level metrics filtered by time window (Last 7 / 30 / 90 days).
-
-| KPI | Description |
-|-----|-------------|
-| **Overall conversion rate** | Upgraded users ÷ total free users in period |
-| **Avg revenue per conversion** | Average `revenue_amd` from `conversion_outcomes` (AMD 2,900/month flat) |
-| **Churn rate (30d)** | Users who churned within 30 days of upgrading |
-| **Notification engagement rate** | Opened or clicked ÷ total notifications shown |
-
-All four metrics recalculate dynamically when the period selector changes.  
-Data source: `GET /api/kpis?period=7|30|90`
-
----
-
-## Campaign Editor
-
-Create and manage upgrade campaigns per segment. Edit message templates, set delivery parameters, and launch.
-
-**How to use:**
-
-1. Select a segment from the left panel (Power / Growing / Casual / Dormant)
-2. Edit the **Message template** — use placeholders:
-    - `{{export_count}}` — user's lifetime export count
-    - `{{paywall_hits}}` — times user hit a Pro limit
-    - `{{price}}` — AMD 2,900 (from global params)
-    - `{{discount}}` — % discount (from global params)
-    - `{{template_count}}` — number of Pro templates
-3. Set **Channel** (In-App Popup / Email / Push Notification) and **Trigger** (On Paywall Hit / On App Open / After 3rd Export)
-4. Click **Launch** — sets campaign status to `running`, syncs ab_test to `running`
-5. Click **Save** — saves draft message without launching
-6. Click **Reset to Draft** — reverts to draft, pauses ab_test
-
-**Global Parameters** (bottom of screen) — shared across all campaigns:
-
-| Parameter | Default |
-|-----------|---------|
-| Test Duration (days) | 7 |
-| Discount % | 20 |
-| Min Sample Size | 50 |
-| Significance Threshold | 0.05 |
-| Price (AMD) | 2900 |
-| Template Count | 120 |
-
-Backend calls: `GET/PUT /api/campaigns/{id}`, `POST /api/campaigns/{id}/launch`, `POST /api/campaigns/{id}/reset`, `GET/PUT /api/global-params/{key}`
-
----
-
-## User Demo
-
-Simulate the upgrade message a real free-tier user would see. Record their simulated response to feed real conversion outcome data back into the system.
-
-**How to use:**
-
-1. Select a segment from the dropdown
-2. Both **Control** (generic baseline message) and **Treatment** (campaign message) are shown side by side
-3. Click **Accept Upgrade** or **Dismiss** for either group to record the outcome
-4. Response is written to `conversion_outcomes` via `POST /api/demo/respond`
-5. Hit **Recalculate** on the A/B Tests screen to see updated conversion rates immediately
-
-**When is the treatment group active?**  
-The treatment buttons are enabled only when a campaign is in `running` status. If the campaign is in `draft`, both columns are visible but the treatment buttons are greyed out with a note to launch the campaign first.
-
-**What happens under the hood:**
-
-```
-Click "Accept Upgrade" (treatment)
-    → POST /api/demo/respond
-    → Backend writes to conversion_outcomes
-         (user_id from treatment ab_assignment, decision = 'upgraded')
-    → Click Recalculate on A/B Tests
-    → Thompson Sampling reruns on fresh data
-    → treatment_rate updates in dashboard
+prob_treatment_wins = (treat_samples > ctrl_samples).mean()
+# significant when >= 0.95
 ```
 
-The **Response Stats** panel on the right shows live accept/dismiss counts per segment, from `GET /api/demo/stats`.
+**Why Thompson Sampling?** Works with small samples, Bayesian, intuitive output, industry standard (Booking.com, Airbnb).
 
 ---
 
-## Running the DS Pipeline
+## Dashboard Screens
 
-The DS pipeline runs automatically on container startup. To re-run manually:
+### Segments
+
+![Segments](imgs/segments.png)
+
+Live segment counts bar chart + behavioral averages table (sessions/week, exports, paywall hits) + per-user ML conversion probability scores.
+
+---
+
+### A/B Tests
+
+![A/B Tests](imgs/ab_tests.png)
+
+One card per segment showing: status, control rate, treatment rate, lift %, significance. Recalculate button reruns Thompson Sampling on the latest data instantly.
+
+---
+
+### KPIs
+
+![KPIs](imgs/kpis.png)
+
+Platform metrics filtered by time window (Last 7 / 30 / 90 days): conversion rate, avg revenue per conversion (AMD 2,900), churn rate, notification engagement rate.
+
+---
+
+### Campaign Editor
+
+![Campaign Editor](imgs/campaigns.png)
+
+Edit message templates with placeholders (`{{export_count}}`, `{{paywall_hits}}`, `{{price}}`, `{{discount}}`). Set channel (In-App / Email / Push) and trigger. Launch → sets campaign + ab_test to running. Reset → reverts to draft.
+
+**Global Parameters:** test duration, discount %, min sample size, significance threshold, price, template count.
+
+---
+
+### User Demo
+
+![User Demo](imgs/user_demo.png)
+
+Side-by-side simulation of what a user sees:
+
+- **Control** — generic baseline message
+- **Treatment** — targeted campaign message
+
+Click Accept Upgrade or Dismiss for either group → recorded in `conversion_outcomes` → hit Recalculate on A/B Tests → rates update instantly.
+
+---
+
+## Quick Start
 
 ```bash
-docker-compose exec ds bash run_ds_pipeline.sh
+git clone https://github.com/DS-223-2026-Spring/ds223-7-project.git
+cd ds223-7-project
+docker-compose up --build
 ```
 
-| Step | Script | What it does |
-|------|--------|--------------|
-| 1 | `seed_events.py` | Seeds `session_events` and `paywall_events` with realistic timestamps |
-| 2 | `segment_kmeans.py` | Fits K-Means, writes new `user_segments` assignments |
-| 3 | `run_ab_analysis.py` | Runs Thompson Sampling, writes `ab_test_results` |
-| 4 | `predict.py` | Trains logistic regression / random forest, scores all 442 users |
-| 5 | `segment_summary.py` | Exports `outputs/segment_summary.csv` and `.json` |
-
----
-
-## API — Swagger UI
-
-All 18 endpoints are documented and testable at [http://localhost:8008/docs](http://localhost:8008/docs).
-
-| Group | Endpoints |
-|-------|-----------|
-| `segments` | `GET /counts`, `/behavioral-averages`, `/{name}/users` |
-| `ab-tests` | `GET /summary`, `/comparison`, `POST /run-analysis` |
-| `kpis` | `GET /api/kpis` |
-| `campaigns` | `GET/PUT /{id}`, `POST /{id}/launch`, `/{id}/reset`, `PUT /{id}/message` |
-| `global-params` | `GET /api/global-params`, `PUT /{key}` |
-| `demo` | `GET /message/{segment}`, `POST /respond`, `GET /stats` |
-| `health` | `GET /health` |
+| URL | Service |
+|-----|---------|
+| [http://localhost:8501](http://localhost:8501) | PM Dashboard |
+| [http://localhost:8008/docs](http://localhost:8008/docs) | API Swagger |
+| [http://localhost:8888](http://localhost:8888) | Jupyter Notebooks |
+| [http://localhost:5050](http://localhost:5050) | pgAdmin |
