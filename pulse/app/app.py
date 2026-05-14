@@ -206,7 +206,7 @@ with st.sidebar:
         label_visibility="collapsed",
     )
     st.divider()
-    st.caption("v1.0 — Milestone 4")
+    st.caption("v1.0")
     st.markdown("[Documentation](https://ds-223-2026-spring.github.io/ds223-7-project/)")
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -436,7 +436,6 @@ elif page == "A/B Tests":
             )
             st.altair_chart(_chart, use_container_width=True)
         
-        st.caption("Data from /api/ab-tests/comparison")
 
 # ────────────────────────────────────────────────────────────────────────────────
 #  KPIs  —  /api/kpis
@@ -453,7 +452,6 @@ elif page == "KPIs":
         horizontal=True,
         key="kpi_period",
     )
-    st.caption(f"Period selector wires to /api/kpis?period=... in M4")
     st.divider()
 
     # FIX 8: wire real API call with mock fallback
@@ -488,7 +486,6 @@ elif page == "KPIs":
         f'{kpis["notification_engagement_rate"]:.0%}' if kpis.get("notification_engagement_rate") is not None else "—",
         delta="+4% vs last period",
     )
-    st.caption("Data from /api/kpis")
 
 # ────────────────────────────────────────────────────────────────────────────────
 #  CAMPAIGN EDITOR  —  /api/campaigns/*  +  /api/global-params/*
@@ -582,7 +579,6 @@ elif page == "Campaign Editor":
             value=msg_value,
             height=110,
             key="camp_msg",
-            help="Calls PUT /api/campaigns/{id}/message",
         )
 
         r1, r2 = st.columns(2)
@@ -702,7 +698,6 @@ elif page == "User Demo":
             st.caption("⚠️ Using demo data — backend unavailable")
 
         st.info(msg)
-        st.caption(f"Source: GET /api/demo/message/{seg}")
         st.divider()
 
         # FIX 2f: decision values "upgraded" and "try_later"
@@ -744,7 +739,6 @@ elif page == "User Demo":
             if "Upgraded" in df_pivot.columns:
                 df_pivot["Upgrade Rate"] = (df_pivot["Upgraded"] / df_pivot["Total"]).map(lambda x: f"{x:.0%}")
             st.dataframe(df_pivot, use_container_width=True)
-            st.caption("Live data from conversion_outcomes · GET /api/demo/stats")
             if "Upgraded" in df_pivot.columns:
                 st.bar_chart(
                     df_resp[df_resp["response"] == "upgraded"].set_index("segment_name")["count"]
