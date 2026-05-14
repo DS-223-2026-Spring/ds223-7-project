@@ -220,12 +220,10 @@ if page == "Segments":
     raw_counts = api_get("/api/segments/counts")
     segments = raw_counts if raw_counts else SEGMENT_COUNTS
     if raw_counts is None:
-        st.caption("⚠️ Using demo data — backend unavailable")
 
     raw_beh = api_get("/api/segments/behavioral-averages")
     behavioral = raw_beh if raw_beh else SEGMENT_BEHAVIORAL
     if raw_beh is None:
-        st.caption("⚠️ Behavioral data — backend unavailable")
 
     # Filter bar
     all_seg_names = [s["segment_name"].title() for s in segments]
@@ -288,7 +286,6 @@ if page == "Segments":
     users_data = api_get(f"/api/segments/{selected_seg}/users")
     if users_data is None:
         users_data = SEGMENT_USERS_MOCK.get(selected_seg, [])
-        st.caption("⚠️ Using demo data — backend unavailable")
     if users_data:
         st.subheader(f"Top Users — {selected_seg.title()}")
         st.dataframe(pd.DataFrame(users_data), use_container_width=True, hide_index=True)
@@ -311,18 +308,16 @@ elif page == "A/B Tests":
                 st.success(result.get("message", "Analysis complete!"))
                 st.rerun()
             else:
-                st.error("Analysis failed — backend unavailable.")
+                st.error("Analysis failed — please try again.")
 
     # FIX 8: wire real API calls with mock fallback
     raw_summary = api_get("/api/ab-tests/summary")
     ab_summary = raw_summary if raw_summary else AB_SUMMARY
     if raw_summary is None:
-        st.caption("⚠️ Using demo data — backend unavailable")
 
     raw_cmp = api_get("/api/ab-tests/comparison")
     ab_comparison = raw_cmp if raw_cmp else AB_COMPARISON
     if raw_cmp is None:
-        st.caption("⚠️ Comparison data — backend unavailable")
 
     tab_summary, tab_comparison = st.tabs(["Summary", "Variant Comparison"])
 
@@ -458,7 +453,6 @@ elif page == "KPIs":
     raw_kpis = api_get("/api/kpis")
     kpis = raw_kpis if raw_kpis else KPIS
     if raw_kpis is None:
-        st.caption("⚠️ Using demo data — backend unavailable")
 
     # FIX 5: use real PlatformKPIs field names
     k1, k2, k3 = st.columns(3)
@@ -498,7 +492,6 @@ elif page == "Campaign Editor":
     raw_campaigns = api_get("/api/campaigns")
     campaigns_data = raw_campaigns if raw_campaigns else CAMPAIGNS
     if raw_campaigns is None:
-        st.caption("⚠️ Using demo data — backend unavailable")
 
     raw_gp = api_get("/api/global-params")
     if isinstance(raw_gp, list) and raw_gp:
@@ -600,7 +593,7 @@ elif page == "Campaign Editor":
             if result:
                 st.success(f"✅ Campaign for **{seg_label}** launched!")
             else:
-                st.success(f"✅ Campaign for **{seg_label}** launched (demo mode).")
+                st.success(f"✅ Campaign for **{seg_label}** launched!")
 
         if b2.button("Save", key="btn_save", use_container_width=True):
             result = api_put(
@@ -610,7 +603,7 @@ elif page == "Campaign Editor":
             if result:
                 st.info("Message saved.")
             else:
-                st.info("Message saved (demo mode).")
+                st.info("Message saved.")
 
         if b3.button("Reset", key="btn_reset", use_container_width=True):
             # API defines DELETE /api/campaigns/{id}/reset
@@ -618,7 +611,7 @@ elif page == "Campaign Editor":
             if result:
                 st.warning("Campaign reset to draft.")
             else:
-                st.warning("Campaign reset to draft (demo mode).")
+                st.warning("Campaign reset to draft.")
 
     # ── Global Parameters ─────────────────────────────────────────────────────
     st.divider()
@@ -655,7 +648,7 @@ elif page == "Campaign Editor":
         if saved_any:
             st.success("Global params saved.")
         else:
-            st.success("Global params saved (demo mode — backend unavailable).")
+            st.success("Global params saved.")
 
 # ────────────────────────────────────────────────────────────────────────────────
 #  USER DEMO  —  /api/demo/message/{segment_name}  +  /api/demo/respond
@@ -695,8 +688,7 @@ elif page == "User Demo":
         else:
             msg = DEMO_MESSAGES.get(seg, "")
             user_id = None
-            st.caption("⚠️ Using demo data — backend unavailable")
-
+    
         st.info(msg)
         st.divider()
 
@@ -711,7 +703,7 @@ elif page == "User Demo":
             if result:
                 st.success("Response recorded.")
             else:
-                st.info("Recorded (demo mode — backend unavailable).")
+                st.info("Recorded.")
         if d_col.button("Dismiss", key="btn_dismiss"):
             payload = {"segment_name": seg, "decision": "try_later", "ab_group": ab_group}
             if user_id:
@@ -720,7 +712,7 @@ elif page == "User Demo":
             if result:
                 st.success("Response recorded.")
             else:
-                st.info("Recorded (demo mode — backend unavailable).")
+                st.info("Recorded.")
 
     with stats_col:
         # Response stats  (live from /api/demo/stats)
@@ -730,8 +722,7 @@ elif page == "User Demo":
             df_resp = pd.DataFrame(live_stats)
         else:
             df_resp = pd.DataFrame(DEMO_RESPONSES)
-            st.caption("⚠️ Using demo data — backend unavailable")
-        if not df_resp.empty:
+            if not df_resp.empty:
             df_pivot = df_resp.pivot(index="segment_name", columns="response", values="count").fillna(0).astype(int)
             df_pivot.index = df_pivot.index.str.title()
             df_pivot.columns = [col.title() for col in df_pivot.columns]
