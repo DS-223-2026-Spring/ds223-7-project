@@ -4,7 +4,7 @@
 
 ---
 
-**Pulse** is a behavioral segmentation and A/B testing platform built for **Armat**, an Armenian writing SaaS, to convert free-tier users to paid Pro subscribers.
+**Pulse** is a behavioral segmentation and A/B testing platform built for **Mer Lezun**, an Armenian writing SaaS, to convert free-tier users to paid Pro subscribers.
 
 ## What Pulse Does
 

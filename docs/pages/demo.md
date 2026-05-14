@@ -1,6 +1,6 @@
 # Demo
 
-Live walkthrough of the Pulse Analytics Dashboard — Milestone 4.
+Live walkthrough of the Pulse Analytics Dashboard.
 
 **Stack:** Streamlit frontend · FastAPI backend · PostgreSQL · Docker Compose  
 **Run it:** `docker-compose up --build` → open [http://localhost:8501](http://localhost:8501)

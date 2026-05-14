@@ -55,7 +55,7 @@ CREATE TYPE campaign_status AS ENUM ('draft', 'pending', 'running', 'paused', 'c
 -- Notification engagement event
 CREATE TYPE notification_event_type AS ENUM ('shown', 'opened', 'dismissed', 'clicked');
 
--- Platform tools inside the Armenian writing app (Armat)
+-- Platform tools inside the Armenian writing app (Mer Lezun)
 CREATE TYPE tool_name AS ENUM ('thesaurus', 'rhyme', 'meter', 'synonym', 'export');
 
 -- User decision when shown an upgrade card (User Demo screen)
@@ -834,7 +834,7 @@ BEGIN
             days_since_last_login, created_at, last_login_at
         ) VALUES (
             v_uid,
-            'user_' || i || '@armat.am',
+            'user_' || i || '@mer lezun.am',
             'User ' || i,
             v_plan::plan_type,
             'active'::user_status,

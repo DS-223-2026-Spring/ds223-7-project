@@ -1,39 +1,24 @@
 # Roadmap
 
-## Milestone 1 — Foundation (complete)
+## Delivered
 
-- [x] Problem definition and business case (Armat free-to-paid conversion)
-- [x] User segmentation model — Power (1,240), Growing (1,580), Casual (980), Dormant (620)
-- [x] Basic prototype — Overview dashboard with KPI cards and segment funnel
-- [x] Should-Have prototype — full sidebar app with 5 screens: Segments, A/B Tests, KPIs, Campaign Editor, User Demo
-- [x] Database schema design (`01_schema.sql`)
-- [x] Flowchart and product roadmap diagram
-- [x] Team roles defined: PM, Backend, Frontend, DB, Data Scientist
+- [x] Business problem definition — Mer Lezun free-to-paid conversion
+- [x] Behavioral user segmentation — Power, Growing, Casual, Dormant (442 users, 4 segments)
+- [x] PostgreSQL 16 database — 15 tables, 6 views, triggers, custom enums
+- [x] FastAPI backend — 18 endpoints across 6 route groups
+- [x] Docker Compose stack — 6 containers: `db`, `back`, `front`, `ds`, `etl`, `pgadmin`
+- [x] Streamlit PM dashboard — 5 fully wired screens with live API data
+- [x] A/B test runner — Beta-Binomial Thompson Sampling, control vs treatment attribution
+- [x] Campaign Editor — per-segment message editing, launch, reset, global params
+- [x] User Demo — side-by-side control/treatment simulation with live response recording
+- [x] KPI dashboard — period-filtered conversion rate, churn, revenue, engagement
+- [x] ML pipeline — logistic regression conversion probability scores per user
+- [x] MkDocs documentation site — deployed to GitHub Pages
 
-## Milestone 2 — Infrastructure (in progress)
+## Future Work
 
-- [x] PostgreSQL 16 database with full schema (`pulse/etl/init/01_schema.sql`) — 15 tables, views, triggers
-- [x] FastAPI backend with 13 endpoints across 5 routes (`pulse/api/routes/`)
-- [x] Docker Compose stack — 6 containers: db, pgadmin, back, front, ds, etl
-- [x] Correct project folder structure (`pulse/api`, `pulse/app`, `pulse/ds`, `pulse/etl`)
-- [x] SQLAlchemy ORM models for all 15 tables (`pulse/api/models.py`)
-- [x] Pydantic schemas merged into single `pulse/api/schema.py`
-- [x] All Dockerfiles use `python:3.13-slim`
-- [x] Streamlit frontend scaffolding with navigation, layout, and component stubs (`pulse/app/`)
-- [ ] Streamlit pages fully wired to live API data
-- [ ] ETL seed pipeline producing complete dataset
-
-## Milestone 3 — Analytics & A/B Testing
-
-- [ ] A/B test runner — variant assignment and result tracking
-- [ ] Statistical significance calculation (chi-square) for test results
-- [ ] KPI dashboard connected to real data
-- [ ] Campaign launch and reset workflow
-- [ ] Data Science analysis in `pulse/ds/experiments.ipynb`
-
-## Milestone 4 — Production Readiness
-
-- [ ] Authentication / role-based access
-- [ ] CI/CD pipeline
-- [ ] Load testing and performance tuning
-- [ ] Full MkDocs documentation site deployed to GitHub Pages
+- [ ] Authentication and role-based access control
+- [ ] CI/CD pipeline with automated tests
+- [ ] Real push notification and email delivery integration
+- [ ] Multi-armed bandit for dynamic traffic allocation
+- [ ] Cohort retention analysis

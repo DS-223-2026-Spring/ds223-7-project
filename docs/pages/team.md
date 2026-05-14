@@ -11,11 +11,11 @@
 
 ## Course
 
-**DS-223 — Marketing Analytics**
+**DS-223 — Marketing Analytics**  
 American University of Armenia · Spring 2026
 
 ## Project
 
-**Pulse** — Free-to-Paid Conversion Platform for Armat
+**Pulse** — Free-to-Paid Conversion Platform for Mer Lezun
 
 Repository: [DS-223-2026-Spring/ds223-7-project](https://github.com/DS-223-2026-Spring/ds223-7-project)

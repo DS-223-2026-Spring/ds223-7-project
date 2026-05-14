@@ -26,7 +26,7 @@ Base = declarative_base()
 # =============================================================================
 
 class User(Base):
-    """Every writer registered on the Armat platform."""
+    """Every writer registered on the Mer Lezun platform."""
     __tablename__ = "users"
 
     user_id = Column(UUID(as_uuid=False), primary_key=True, server_default=text("gen_random_uuid()"))
@@ -115,7 +115,7 @@ class SessionEvent(Base):
 
 
 class ToolUsageLog(Base):
-    """Every tool invocation inside the Armat editor."""
+    """Every tool invocation inside the Mer Lezun editor."""
     __tablename__ = "tool_usage_logs"
 
     log_id = Column(UUID(as_uuid=False), primary_key=True, server_default=text("gen_random_uuid()"))

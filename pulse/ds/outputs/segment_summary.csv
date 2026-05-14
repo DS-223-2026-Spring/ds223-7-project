@@ -1,0 +1,5 @@
+segment_name,label,color_hex,user_count,avg_sessions_per_week,avg_exports,avg_paywall_hits,avg_conversion_prob,high_confidence,medium_confidence,low_confidence,control_rate,treatment_rate,lift_pct,significance,recommended_action
+power,Power users,#00b87a,66,7.60,9.5,6.9,0.6435,0,66,0,0.0286,0.1143,300.00,borderline,Upsell — users regularly hit export limits. Show Pro unlock CTA.
+growing,Growing users,#3b82f6,110,4.19,5.2,2.5,0.5345,0,110,0,0.0702,0.0702,0.00,not_significant,Nurture — rising activity. Highlight advanced features.
+casual,Casual users,#f59e0b,155,1.74,2.5,1.0,0.4558,0,155,0,0.0633,0.0375,-40.75,not_significant,Re-engage — template library hook. Show value of Pro templates.
+dormant,Dormant users,#9ca3af,111,0.27,1.1,0.0,0.3175,0,69,42,0.0526,0.0172,-67.24,not_significant,Win-back — offer time-limited discount (30%) with urgency.

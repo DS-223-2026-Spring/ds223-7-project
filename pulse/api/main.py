@@ -12,7 +12,7 @@ from routes import segments, ab_tests, kpis, campaigns, demo
 
 app = FastAPI(
     title="Pulse API",
-    description="Free-to-Paid Conversion Platform for Armat",
+    description="Free-to-Paid Conversion Platform for Mer Lezun",
     version="0.1.0",
 )
 

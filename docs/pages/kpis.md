@@ -36,7 +36,7 @@ Each campaign runs a **14-day A/B test** window. Results are tracked per variant
 | `dormant_discount` | Win-back discount % for dormant users | 20% |
 | `template_count` | Max active message templates per campaign | — |
 
-## Sample Campaign Messages (from Milestone 1 prototype)
+## Sample Campaign Messages
 
 | Segment | Message |
 |---------|---------|
