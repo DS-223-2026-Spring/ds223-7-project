@@ -51,7 +51,7 @@ class ABTestSummary(BaseModel):
     segment_label: str
     color_hex: str
     test_id: str
-    status: Literal['draft', 'pending', 'running', 'paused', 'completed']
+    status: Literal['pending', 'running', 'paused', 'completed', 'cancelled']
     started_at: datetime | None = None
     ended_at: datetime | None = None
     duration_days: int
@@ -114,7 +114,7 @@ class CampaignOut(BaseModel):
     color_hex: str
     channel: Literal['in_app_popup', 'push_notification', 'email']
     trigger_event: Literal['on_paywall_hit', 'on_app_open', 'after_3rd_export']
-    status: Literal['draft', 'pending', 'running', 'paused', 'completed']
+    status: Literal['pending', 'running', 'paused', 'completed', 'cancelled']
     active_message: MessageTemplateOut | None = None
     created_at: datetime
     launched_at: datetime | None = None

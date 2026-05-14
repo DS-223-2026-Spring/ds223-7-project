@@ -184,12 +184,24 @@ def update_message(
 @router.post("/campaigns/{campaign_id}/launch", response_model=CampaignOut,
              responses={200: {"description": "Campaign now running"}})
 def launch_campaign(campaign_id: str, db: Session = Depends(get_db)):
-    """Set campaign status to 'running' — the Launch A/B test button."""
+    """Set campaign status to 'running' and sync the linked A/B test."""
     db.execute(
         text("""
             UPDATE campaigns
             SET status = 'running', launched_at = now()
             WHERE campaign_id = :cid
+        """),
+        {"cid": campaign_id},
+    )
+    # Keep ab_test in sync — mark as running when campaign launches
+    db.execute(
+        text("""
+            UPDATE ab_tests t
+            SET status = 'running'
+            FROM campaigns c
+            WHERE c.segment_id = t.segment_id
+              AND c.campaign_id = :cid
+              AND t.status IN ('draft', 'pending')
         """),
         {"cid": campaign_id},
     )
@@ -199,14 +211,25 @@ def launch_campaign(campaign_id: str, db: Session = Depends(get_db)):
 
 @router.delete("/campaigns/{campaign_id}/reset", response_model=CampaignOut,
                responses={200: {"description": "Campaign reset to draft"}})
-
 def reset_campaign(campaign_id: str, db: Session = Depends(get_db)):
-    """Reset campaign back to 'draft'."""
+    """Reset campaign back to 'draft' and sync the linked A/B test."""
     db.execute(
         text("""
             UPDATE campaigns
             SET status = 'draft', launched_at = NULL
             WHERE campaign_id = :cid
+        """),
+        {"cid": campaign_id},
+    )
+    # Keep ab_test in sync — mark as pending when campaign is reset to draft
+    db.execute(
+        text("""
+            UPDATE ab_tests t
+            SET status = 'pending'
+            FROM campaigns c
+            WHERE c.segment_id = t.segment_id
+              AND c.campaign_id = :cid
+              AND t.status NOT IN ('completed')
         """),
         {"cid": campaign_id},
     )

@@ -156,11 +156,13 @@ def run_analysis(db: Session = Depends(get_db)):
 
     Fully idempotent — safe to call multiple times.
     """
-    # 1. Get all ab_tests with their segment info
+    # 1. Get all ab_tests with their segment + campaign status
     tests = db.execute(text("""
-        SELECT t.test_id, t.segment_id, s.name AS segment_name
+        SELECT t.test_id, t.segment_id, s.name AS segment_name,
+               COALESCE(c.status, 'draft') AS campaign_status
         FROM ab_tests t
-        JOIN segments s ON s.segment_id = t.segment_id
+        JOIN segments s  ON s.segment_id = t.segment_id
+        LEFT JOIN campaigns c ON c.segment_id = t.segment_id
     """)).mappings().all()
 
     if not tests:
@@ -171,8 +173,9 @@ def run_analysis(db: Session = Depends(get_db)):
 
     updated = 0
     for t in tests:
-        test_id    = t["test_id"]
-        seg_name   = t["segment_name"]
+        test_id         = t["test_id"]
+        seg_name        = t["segment_name"]
+        campaign_status = t["campaign_status"]
 
         # 2. Count conversions per group for this test
         counts = db.execute(text("""
@@ -256,8 +259,14 @@ def run_analysis(db: Session = Depends(get_db)):
                 "now": now,
             })
 
-        # 5. Update ab_tests status
-        new_status = _significance_to_status(ts["significance"])
+        # 5. Update ab_tests status — only apply significance result when
+        #    the campaign has been launched (running/completed/paused).
+        #    Draft campaigns stay as 'pending' so the boards stay consistent.
+        if campaign_status in ("running", "completed", "paused"):
+            new_status = _significance_to_status(ts["significance"])
+        else:
+            # campaign is draft/pending — keep ab_test as pending
+            new_status = "pending"
         db.execute(
             text("UPDATE ab_tests SET status = :s WHERE test_id = :tid"),
             {"s": new_status, "tid": test_id}
