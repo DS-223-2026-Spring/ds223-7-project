@@ -573,24 +573,16 @@ elif page == "Campaign Editor":
                                     format_func=lambda x: TRIGGER_LABELS.get(x, x))
 
         st.divider()
-        b1, b2, b3 = st.columns(3)
-        campaign_id = c.get("campaign_id", 1)
+        campaign_id = c.get("campaign_id")
+        b1, b2 = st.columns(2)
 
         if b1.button("Launch", key="btn_launch", type="primary", use_container_width=True):
-            # First save the message, then launch
             api_put(f"/api/campaigns/{campaign_id}/message", {"body": new_msg})
             api_post(f"/api/campaigns/{campaign_id}/launch", {})
-            st.success(f"Campaign for **{seg_label}** launched!")
             st.rerun()
 
-        if b2.button("Save", key="btn_save", use_container_width=True):
-            api_put(f"/api/campaigns/{campaign_id}/message", {"body": new_msg})
-            st.info("Message saved.")
-            st.rerun()
-
-        if b3.button("Reset", key="btn_reset", use_container_width=True):
+        if b2.button("Reset to Draft", key="btn_reset", use_container_width=True):
             api_delete(f"/api/campaigns/{campaign_id}/reset")
-            st.warning("Campaign reset to draft.")
             st.rerun()
 
     # ── Global Parameters ─────────────────────────────────────────────────────

@@ -201,7 +201,7 @@ def launch_campaign(campaign_id: str, db: Session = Depends(get_db)):
             FROM campaigns c
             WHERE c.segment_id = t.segment_id
               AND c.campaign_id = :cid
-              AND t.status IN ('draft', 'pending')
+              AND t.status IN ('pending', 'running')
         """),
         {"cid": campaign_id},
     )
