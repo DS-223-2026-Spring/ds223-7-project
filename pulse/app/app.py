@@ -594,37 +594,35 @@ elif page == "Campaign Editor":
     st.subheader("Global Parameters")
     st.caption("Shared A/B test defaults applied across all campaigns")
 
-    gp1, gp2, gp3, gp4 = st.columns(4)
-    def _int(val, default):
-        try: return int(val)
-        except (TypeError, ValueError): return default
+    GP_META = {
+        "pro_price_amd":          ("Pro Price (AMD)",        "int"),
+        "dormant_discount":       ("Dormant Discount %",     "int"),
+        "template_count":         ("Template Count",         "int"),
+        "test_duration_days":     ("Test Duration (days)",   "int"),
+        "min_sample_size":        ("Min Sample Size",        "int"),
+        "significance_threshold": ("Significance Threshold", "float"),
+    }
 
-    def _float(val, default):
-        try: return float(val)
-        except (TypeError, ValueError): return default
-
-    gp_dur    = gp1.number_input("Test Duration (days)",   value=_int(global_params.get("test_duration_days", 14), 14),   min_value=1,  max_value=90,  key="gp_dur")
-    gp_disc   = gp2.number_input("Discount %",             value=_int(global_params.get("discount_pct", 20), 20),         min_value=0,  max_value=100, key="gp_disc")
-    gp_sample = gp3.number_input("Min Sample Size",        value=_int(global_params.get("min_sample_size", 50), 50),      min_value=10,               key="gp_sample")
-    gp_sig    = gp4.number_input("Significance Threshold", value=_float(global_params.get("significance_threshold", 0.05), 0.05),
-                                  min_value=0.0, max_value=1.0, step=0.01, format="%.2f", key="gp_sig")
+    edited = {}
+    cols = st.columns(3)
+    for idx, (key, (label, kind)) in enumerate(GP_META.items()):
+        raw = global_params.get(key, "0")
+        col = cols[idx % 3]
+        if kind == "float":
+            try: fval = float(raw)
+            except: fval = 0.0
+            edited[key] = col.number_input(label, value=fval, min_value=0.0, max_value=1.0,
+                                           step=0.01, format="%.2f", key=f"gp_{key}")
+        else:
+            try: ival = int(float(raw))
+            except: ival = 0
+            edited[key] = col.number_input(label, value=ival, min_value=0, key=f"gp_{key}")
 
     if st.button("Save global params", key="btn_gp_save"):
-        params_to_save = {
-            "test_duration_days":    gp_dur,
-            "discount_pct":          gp_disc,
-            "min_sample_size":       gp_sample,
-            "significance_threshold": gp_sig,
-        }
-        saved_any = False
-        for key, val in params_to_save.items():
-            r = api_put(f"/api/global-params/{key}", {"value": str(val)})
-            if r:
-                saved_any = True
-        if saved_any:
-            st.success("Global params saved.")
-        else:
-            st.success("Global params saved.")
+        for key, val in edited.items():
+            api_put(f"/api/global-params/{key}", {"value": str(val)})
+        st.success("Global params saved.")
+        st.rerun()
 
 # ────────────────────────────────────────────────────────────────────────────────
 #  USER DEMO  —  /api/demo/message/{segment_name}  +  /api/demo/respond
