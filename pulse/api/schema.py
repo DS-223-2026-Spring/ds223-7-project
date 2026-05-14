@@ -155,6 +155,9 @@ class DemoMessageOut(BaseModel):
     rendered_body: str
     channel: str
     trigger_event: str
+    ab_group: Literal['control', 'treatment']
+    user_id: str
+    test_id: str
 
 
 class DemoResponse(BaseModel):
@@ -162,6 +165,8 @@ class DemoResponse(BaseModel):
     segment_name: str
     decision: Literal['upgraded', 'try_later', 'dismissed']
     ab_group: Literal['control', 'treatment']
+    user_id: str
+    test_id: str
     
 class DemoRespondResult(BaseModel):
     """Response after recording an upgrade / try-later decision."""

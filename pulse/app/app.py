@@ -644,51 +644,46 @@ elif page == "User Demo":
             key="demo_seg",
         )
 
-        # FIX 7: ab_group selector
-        ab_group = st.radio(
-            "Group",
-            ["control", "treatment"],
-            horizontal=True,
-            label_visibility="collapsed",
-        )
-
         st.divider()
         st.subheader("Upgrade Message")
 
-        # FIX 8: wire real API call with mock fallback
-        # Route: GET /api/demo/message/{segment_name} → DemoMessageOut (rendered_body field)
         raw_demo = api_get(f"/api/demo/message/{seg}")
         if raw_demo:
-            msg = raw_demo.get("rendered_body") or DEMO_MESSAGES.get(seg, "")
-            user_id = None  # DemoMessageOut has no user_id; respond uses segment_name
+            ab_group = raw_demo.get("ab_group", "treatment")
+            user_id  = raw_demo.get("user_id")
+            test_id  = raw_demo.get("test_id")
+            msg      = raw_demo.get("rendered_body") or DEMO_MESSAGES.get(seg, "")
         else:
-            msg = DEMO_MESSAGES.get(seg, "")
-            user_id = None
-    
+            ab_group = "treatment"
+            user_id  = None
+            test_id  = None
+            msg      = DEMO_MESSAGES.get(seg, "")
+
+        group_label = "Control group — generic message" if ab_group == "control" else "Treatment group — campaign message"
+        st.caption(group_label)
         st.info(msg)
         st.divider()
 
-        # FIX 2f: decision values "upgraded" and "try_later"
         st.write("**How would this user respond?**")
         a_col, d_col = st.columns(2)
         if a_col.button("Accept Upgrade", key="btn_accept", type="primary"):
-            payload = {"segment_name": seg, "decision": "upgraded", "ab_group": ab_group}
-            if user_id:
-                payload["user_id"] = user_id
-            result = api_post("/api/demo/respond", payload)
-            if result:
-                st.success("Response recorded.")
-            else:
-                st.info("Recorded.")
+            result = api_post("/api/demo/respond", {
+                "segment_name": seg,
+                "decision": "upgraded",
+                "ab_group": ab_group,
+                "user_id": user_id or "",
+                "test_id": test_id or "",
+            })
+            st.rerun()
         if d_col.button("Dismiss", key="btn_dismiss"):
-            payload = {"segment_name": seg, "decision": "try_later", "ab_group": ab_group}
-            if user_id:
-                payload["user_id"] = user_id
-            result = api_post("/api/demo/respond", payload)
-            if result:
-                st.success("Response recorded.")
-            else:
-                st.info("Recorded.")
+            result = api_post("/api/demo/respond", {
+                "segment_name": seg,
+                "decision": "try_later",
+                "ab_group": ab_group,
+                "user_id": user_id or "",
+                "test_id": test_id or "",
+            })
+            st.rerun()
 
     with stats_col:
         # Response stats  (live from /api/demo/stats)

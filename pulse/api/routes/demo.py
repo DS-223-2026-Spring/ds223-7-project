@@ -42,41 +42,65 @@ def get_demo_stats(db: Session = Depends(get_db)):
 @router.get("/message/{segment_name}", response_model=DemoMessageOut,
             responses={200: {"description": "Rendered upgrade message for the segment"}})
 def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
-    """Get the rendered upgrade message for a segment.
+    """Get the rendered upgrade message for a randomly assigned user in this segment.
 
-    Powers the phone mockup on the User Demo screen.
-    Substitutes {{placeholders}} with global_params values.
+    Picks a random user from ab_assignments so control users see the
+    generic baseline message and treatment users see the campaign message.
     """
+    # Pick a random ab-assigned user to simulate realistic group distribution
+    assignment = db.execute(
+        text("""
+            SELECT aa.user_id, aa.test_id, aa.group_type
+            FROM ab_assignments aa
+            JOIN ab_tests t  ON t.test_id    = aa.test_id
+            JOIN segments s  ON s.segment_id = t.segment_id
+            WHERE s.name = :seg
+            ORDER BY random()
+            LIMIT 1
+        """),
+        {"seg": segment_name},
+    ).mappings().first()
+
+    if not assignment:
+        raise HTTPException(status_code=404,
+                            detail=f"No A/B assignments found for segment '{segment_name}'")
+
+    group = assignment["group_type"]  # 'control' or 'treatment'
+
+    # Fetch campaign + both message bodies
     row = db.execute(
         text("""
             SELECT
-                s.name  AS segment_name,
-                s.label AS segment_label,
+                s.name        AS segment_name,
+                s.label       AS segment_label,
                 s.color_hex,
-                mt.body,
                 c.channel,
-                c.trigger_event
+                c.trigger_event,
+                ctrl.body     AS control_body,
+                treat.body    AS treatment_body
             FROM campaigns c
-            JOIN segments s          ON s.segment_id  = c.segment_id
-            JOIN message_templates mt ON mt.message_id = c.active_message_id
+            JOIN segments s ON s.segment_id = c.segment_id
+            LEFT JOIN message_templates ctrl  ON ctrl.message_id  = c.control_message_id
+            LEFT JOIN message_templates treat ON treat.message_id = c.active_message_id
             WHERE s.name = :seg
         """),
         {"seg": segment_name},
     ).mappings().first()
 
     if not row:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No campaign found for segment '{segment_name}'",
-        )
+        raise HTTPException(status_code=404,
+                            detail=f"No campaign found for segment '{segment_name}'")
+
+    # Choose the correct message body based on group
+    body = row["control_body"] if group == "control" else row["treatment_body"]
+    if not body:
+        body = "Upgrade to Pulse Pro and unlock all premium features for AMD 2,900/month."
 
     # Render placeholders using global_params
-    params_rows = db.execute(
-        text("SELECT key, value FROM global_params")
-    ).mappings().all()
+    params_rows = db.execute(text("SELECT key, value FROM global_params")).mappings().all()
     param_map = {r["key"]: r["value"] for r in params_rows}
 
-    rendered = row["body"]
+    rendered = body
     rendered = rendered.replace("{{price}}", param_map.get("pro_price_amd", "2900"))
     rendered = rendered.replace("{{discount}}", param_map.get("dormant_discount", "20"))
     rendered = rendered.replace("{{template_count}}", param_map.get("template_count", "120"))
@@ -90,6 +114,9 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
         rendered_body=rendered,
         channel=row["channel"],
         trigger_event=row["trigger_event"],
+        ab_group=group,
+        user_id=str(assignment["user_id"]),
+        test_id=str(assignment["test_id"]),
     )
 
 
@@ -98,41 +125,22 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
 def record_demo_response(payload: DemoResponse, db: Session = Depends(get_db)):
     """Record a user's upgrade / try-later decision from the Demo screen.
 
-    Picks a random assigned user from the segment's A/B test so that
-    test_id and group_type are populated in conversion_outcomes — this
-    lets POST /api/ab-tests/run-analysis count demo responses correctly.
+    Uses the user_id, test_id and ab_group returned by GET /api/demo/message
+    so control and treatment responses are correctly attributed.
     """
-    # Pick a random ab-assigned user from this segment (gives us test_id + group_type)
-    assignment = db.execute(
-        text("""
-            SELECT aa.user_id, aa.test_id, aa.group_type
-            FROM ab_assignments aa
-            JOIN ab_tests t  ON t.test_id    = aa.test_id
-            JOIN segments s  ON s.segment_id = t.segment_id
-            WHERE s.name = :seg
-            ORDER BY random()
-            LIMIT 1
-        """),
-        {"seg": payload.segment_name},
-    ).mappings().first()
-
-    if not assignment:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No A/B assignments found for segment '{payload.segment_name}'",
-        )
-
     campaign = db.execute(
         text("""
-            SELECT c.campaign_id, c.active_message_id
+            SELECT c.campaign_id,
+                   CASE WHEN :grp = 'control' THEN c.control_message_id
+                        ELSE c.active_message_id END AS message_id
             FROM campaigns c
             JOIN segments s ON s.segment_id = c.segment_id
             WHERE s.name = :seg
         """),
-        {"seg": payload.segment_name},
+        {"seg": payload.segment_name, "grp": payload.ab_group},
     ).mappings().first()
 
-    actual_group = assignment["group_type"]
+    actual_group = payload.ab_group
 
     db.execute(
         text("""
@@ -145,10 +153,10 @@ def record_demo_response(payload: DemoResponse, db: Session = Depends(get_db)):
                  CASE WHEN :dec = 'upgraded' THEN 2900 ELSE NULL END)
         """),
         {
-            "uid": assignment["user_id"],
-            "tid": assignment["test_id"],
+            "uid": payload.user_id,
+            "tid": payload.test_id,
             "cid": campaign["campaign_id"] if campaign else None,
-            "mid": campaign["active_message_id"] if campaign else None,
+            "mid": campaign["message_id"] if campaign else None,
             "grp": actual_group,
             "dec": payload.decision,
         },
