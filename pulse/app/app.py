@@ -219,11 +219,9 @@ if page == "Segments":
     # FIX 8: wire real API calls with mock fallback
     raw_counts = api_get("/api/segments/counts")
     segments = raw_counts if raw_counts else SEGMENT_COUNTS
-    if raw_counts is None:
 
     raw_beh = api_get("/api/segments/behavioral-averages")
     behavioral = raw_beh if raw_beh else SEGMENT_BEHAVIORAL
-    if raw_beh is None:
 
     # Filter bar
     all_seg_names = [s["segment_name"].title() for s in segments]
@@ -313,11 +311,9 @@ elif page == "A/B Tests":
     # FIX 8: wire real API calls with mock fallback
     raw_summary = api_get("/api/ab-tests/summary")
     ab_summary = raw_summary if raw_summary else AB_SUMMARY
-    if raw_summary is None:
 
     raw_cmp = api_get("/api/ab-tests/comparison")
     ab_comparison = raw_cmp if raw_cmp else AB_COMPARISON
-    if raw_cmp is None:
 
     tab_summary, tab_comparison = st.tabs(["Summary", "Variant Comparison"])
 
@@ -452,7 +448,6 @@ elif page == "KPIs":
     # FIX 8: wire real API call with mock fallback
     raw_kpis = api_get("/api/kpis")
     kpis = raw_kpis if raw_kpis else KPIS
-    if raw_kpis is None:
 
     # FIX 5: use real PlatformKPIs field names
     k1, k2, k3 = st.columns(3)
@@ -491,7 +486,6 @@ elif page == "Campaign Editor":
     # Wire real API call with mock fallback
     raw_campaigns = api_get("/api/campaigns")
     campaigns_data = raw_campaigns if raw_campaigns else CAMPAIGNS
-    if raw_campaigns is None:
 
     raw_gp = api_get("/api/global-params")
     if isinstance(raw_gp, list) and raw_gp:
@@ -718,11 +712,8 @@ elif page == "User Demo":
         # Response stats  (live from /api/demo/stats)
         st.subheader("Response Stats by Segment")
         live_stats = api_get("/api/demo/stats")
-        if live_stats:
-            df_resp = pd.DataFrame(live_stats)
-        else:
-            df_resp = pd.DataFrame(DEMO_RESPONSES)
-            if not df_resp.empty:
+        df_resp = pd.DataFrame(live_stats) if live_stats else pd.DataFrame(DEMO_RESPONSES)
+        if not df_resp.empty:
             df_pivot = df_resp.pivot(index="segment_name", columns="response", values="count").fillna(0).astype(int)
             df_pivot.index = df_pivot.index.str.title()
             df_pivot.columns = [col.title() for col in df_pivot.columns]
