@@ -252,7 +252,7 @@ if page == "Segments":
     df_beh["segment_name"] = df_beh["segment_name"].str.title()
     df_beh = df_beh[df_beh["segment_name"].isin(seg_filter_options)]
     st.dataframe(
-        df_beh.rename(columns={
+        df_beh[["segment_name", "avg_sessions_per_week", "avg_exports", "avg_paywall_hits"]].rename(columns={
             "segment_name":          "Segment",
             "avg_sessions_per_week": "Avg Sessions / Week",
             "avg_exports":           "Avg Exports",
@@ -392,7 +392,7 @@ elif page == "A/B Tests":
         if seg_filter != "All":
             df_cmp = df_cmp[df_cmp["segment_name"] == seg_filter]
         st.dataframe(
-            df_cmp.rename(columns={
+            df_cmp[["segment_name", "label", "control_rate", "treatment_rate", "lift_pct", "significance"]].rename(columns={
                 "segment_name":    "Segment",
                 "label":           "Label",
                 "control_rate":    "Control Rate",
