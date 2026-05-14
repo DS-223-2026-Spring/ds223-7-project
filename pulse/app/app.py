@@ -574,14 +574,18 @@ elif page == "Campaign Editor":
 
         st.divider()
         campaign_id = c.get("campaign_id")
-        b1, b2 = st.columns(2)
+        b1, b2, b3 = st.columns(3)
 
         if b1.button("Launch", key="btn_launch", type="primary", use_container_width=True):
             api_put(f"/api/campaigns/{campaign_id}/message", {"body": new_msg})
             api_post(f"/api/campaigns/{campaign_id}/launch", {})
             st.rerun()
 
-        if b2.button("Reset to Draft", key="btn_reset", use_container_width=True):
+        if b2.button("Save", key="btn_save", use_container_width=True):
+            api_put(f"/api/campaigns/{campaign_id}/message", {"body": new_msg})
+            st.rerun()
+
+        if b3.button("Reset to Draft", key="btn_reset", use_container_width=True):
             api_delete(f"/api/campaigns/{campaign_id}/reset")
             st.rerun()
 
