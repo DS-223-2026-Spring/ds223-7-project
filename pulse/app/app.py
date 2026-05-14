@@ -372,7 +372,7 @@ elif page == "A/B Tests":
             if "Treatment Rate" in df_display.columns:
                 df_display["Treatment Rate"] = df_display["Treatment Rate"].map(lambda x: f"{x:.1%}" if x is not None else "—")
             if "Lift %" in df_display.columns:
-                df_display["Lift %"] = df_display["Lift %"].map(lambda x: f"+{x:.1f}%" if x is not None else "—")
+                df_display["Lift %"] = df_display["Lift %"].map(lambda x: (f"+{x:.1f}%" if x >= 0 else f"{x:.1f}%") if x is not None else "—")
             if "Status" in df_display.columns:
                 df_display["Status"] = df_display["Status"].str.title()
             st.dataframe(df_display, use_container_width=True, hide_index=True)
