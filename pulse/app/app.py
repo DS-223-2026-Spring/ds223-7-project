@@ -579,29 +579,19 @@ elif page == "Campaign Editor":
         if b1.button("Launch", key="btn_launch", type="primary", use_container_width=True):
             # First save the message, then launch
             api_put(f"/api/campaigns/{campaign_id}/message", {"body": new_msg})
-            result = api_post(f"/api/campaigns/{campaign_id}/launch", {})
-            if result:
-                st.success(f"Campaign for **{seg_label}** launched!")
-            else:
-                st.success(f"Campaign for **{seg_label}** launched!")
+            api_post(f"/api/campaigns/{campaign_id}/launch", {})
+            st.success(f"Campaign for **{seg_label}** launched!")
+            st.rerun()
 
         if b2.button("Save", key="btn_save", use_container_width=True):
-            result = api_put(
-                f"/api/campaigns/{campaign_id}/message",
-                {"body": new_msg},
-            )
-            if result:
-                st.info("Message saved.")
-            else:
-                st.info("Message saved.")
+            api_put(f"/api/campaigns/{campaign_id}/message", {"body": new_msg})
+            st.info("Message saved.")
+            st.rerun()
 
         if b3.button("Reset", key="btn_reset", use_container_width=True):
-            # API defines DELETE /api/campaigns/{id}/reset
-            result = api_delete(f"/api/campaigns/{campaign_id}/reset")
-            if result:
-                st.warning("Campaign reset to draft.")
-            else:
-                st.warning("Campaign reset to draft.")
+            api_delete(f"/api/campaigns/{campaign_id}/reset")
+            st.warning("Campaign reset to draft.")
+            st.rerun()
 
     # ── Global Parameters ─────────────────────────────────────────────────────
     st.divider()
