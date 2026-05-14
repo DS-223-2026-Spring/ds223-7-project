@@ -148,14 +148,15 @@ class GlobalParamUpdate(BaseModel):
 # ═════════════════════════════════════════════════════════════════════
 
 class DemoMessageOut(BaseModel):
-    """The rendered upgrade message shown inside the phone mockup."""
+    """Messages for both A/B groups + campaign status."""
     segment_name: str
     segment_label: str
     color_hex: str
-    rendered_body: str
+    campaign_status: str
     channel: str
     trigger_event: str
-    ab_group: Literal['control', 'treatment']
+    control_body: str
+    treatment_body: str
     user_id: str
     test_id: str
 
@@ -167,6 +168,7 @@ class DemoResponse(BaseModel):
     ab_group: Literal['control', 'treatment']
     user_id: str
     test_id: str
+
     
 class DemoRespondResult(BaseModel):
     """Response after recording an upgrade / try-later decision."""

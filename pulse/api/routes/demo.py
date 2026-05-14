@@ -39,21 +39,32 @@ def get_demo_stats(db: Session = Depends(get_db)):
         return []
 
 
-@router.get("/message/{segment_name}", response_model=DemoMessageOut,
-            responses={200: {"description": "Rendered upgrade message for the segment"}})
-def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
-    """Get the rendered upgrade message for a randomly assigned user in this segment.
+def _render(body: str, param_map: dict) -> str:
+    """Substitute {{placeholders}} with global_params values."""
+    body = body.replace("{{price}}",          param_map.get("pro_price_amd", "2900"))
+    body = body.replace("{{discount}}",       param_map.get("dormant_discount", "20"))
+    body = body.replace("{{template_count}}", param_map.get("template_count", "120"))
+    body = body.replace("{{export_count}}",   "47")
+    body = body.replace("{{paywall_hits}}",   "23")
+    return body
 
-    Picks a random user from ab_assignments so control users see the
-    generic baseline message and treatment users see the campaign message.
+
+@router.get("/message/{segment_name}", response_model=DemoMessageOut,
+            responses={200: {"description": "Both control and treatment messages + campaign status"}})
+def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
+    """Return both control and treatment messages for the segment.
+
+    If campaign is running  → frontend shows both side by side.
+    If campaign is not running → frontend shows only the control message.
+    Also returns a random assigned user (user_id + test_id) for attribution.
     """
-    # Pick a random ab-assigned user to simulate realistic group distribution
+    # Pick one random ab-assigned user (for test_id / attribution)
     assignment = db.execute(
         text("""
-            SELECT aa.user_id, aa.test_id, aa.group_type
+            SELECT aa.user_id, aa.test_id
             FROM ab_assignments aa
-            JOIN ab_tests t  ON t.test_id    = aa.test_id
-            JOIN segments s  ON s.segment_id = t.segment_id
+            JOIN ab_tests t ON t.test_id    = aa.test_id
+            JOIN segments s ON s.segment_id = t.segment_id
             WHERE s.name = :seg
             ORDER BY random()
             LIMIT 1
@@ -65,19 +76,19 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404,
                             detail=f"No A/B assignments found for segment '{segment_name}'")
 
-    group = assignment["group_type"]  # 'control' or 'treatment'
-
-    # Fetch campaign + both message bodies
     row = db.execute(
         text("""
             SELECT
-                s.name        AS segment_name,
-                s.label       AS segment_label,
+                s.name   AS segment_name,
+                s.label  AS segment_label,
                 s.color_hex,
+                c.status AS campaign_status,
                 c.channel,
                 c.trigger_event,
-                ctrl.body     AS control_body,
-                treat.body    AS treatment_body
+                COALESCE(ctrl.body,
+                    'Upgrade to Pulse Pro and unlock all premium features for AMD 2,900/month.'
+                )          AS control_body,
+                treat.body AS treatment_body
             FROM campaigns c
             JOIN segments s ON s.segment_id = c.segment_id
             LEFT JOIN message_templates ctrl  ON ctrl.message_id  = c.control_message_id
@@ -91,30 +102,18 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404,
                             detail=f"No campaign found for segment '{segment_name}'")
 
-    # Choose the correct message body based on group
-    body = row["control_body"] if group == "control" else row["treatment_body"]
-    if not body:
-        body = "Upgrade to Pulse Pro and unlock all premium features for AMD 2,900/month."
-
-    # Render placeholders using global_params
     params_rows = db.execute(text("SELECT key, value FROM global_params")).mappings().all()
     param_map = {r["key"]: r["value"] for r in params_rows}
-
-    rendered = body
-    rendered = rendered.replace("{{price}}", param_map.get("pro_price_amd", "2900"))
-    rendered = rendered.replace("{{discount}}", param_map.get("dormant_discount", "20"))
-    rendered = rendered.replace("{{template_count}}", param_map.get("template_count", "120"))
-    rendered = rendered.replace("{{export_count}}", "47")
-    rendered = rendered.replace("{{paywall_hits}}", "23")
 
     return DemoMessageOut(
         segment_name=row["segment_name"],
         segment_label=row["segment_label"],
         color_hex=row["color_hex"],
-        rendered_body=rendered,
+        campaign_status=row["campaign_status"],
         channel=row["channel"],
         trigger_event=row["trigger_event"],
-        ab_group=group,
+        control_body=_render(row["control_body"], param_map),
+        treatment_body=_render(row["treatment_body"] or "", param_map),
         user_id=str(assignment["user_id"]),
         test_id=str(assignment["test_id"]),
     )

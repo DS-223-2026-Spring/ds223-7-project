@@ -649,41 +649,58 @@ elif page == "User Demo":
 
         raw_demo = api_get(f"/api/demo/message/{seg}")
         if raw_demo:
-            ab_group = raw_demo.get("ab_group", "treatment")
-            user_id  = raw_demo.get("user_id")
-            test_id  = raw_demo.get("test_id")
-            msg      = raw_demo.get("rendered_body") or DEMO_MESSAGES.get(seg, "")
+            campaign_status = raw_demo.get("campaign_status", "draft")
+            user_id         = raw_demo.get("user_id", "")
+            test_id         = raw_demo.get("test_id", "")
+            control_body    = raw_demo.get("control_body") or DEMO_MESSAGES.get(seg, "")
+            treatment_body  = raw_demo.get("treatment_body") or DEMO_MESSAGES.get(seg, "")
         else:
-            ab_group = "treatment"
-            user_id  = None
-            test_id  = None
-            msg      = DEMO_MESSAGES.get(seg, "")
+            campaign_status = "draft"
+            user_id = test_id = ""
+            control_body = treatment_body = DEMO_MESSAGES.get(seg, "")
 
-        group_label = "Control group — generic message" if ab_group == "control" else "Treatment group — campaign message"
-        st.caption(group_label)
-        st.info(msg)
-        st.divider()
+        is_running = campaign_status == "running"
 
-        st.write("**How would this user respond?**")
-        a_col, d_col = st.columns(2)
-        if a_col.button("Accept Upgrade", key="btn_accept", type="primary"):
-            result = api_post("/api/demo/respond", {
-                "segment_name": seg,
-                "decision": "upgraded",
-                "ab_group": ab_group,
-                "user_id": user_id or "",
-                "test_id": test_id or "",
-            })
-            st.rerun()
-        if d_col.button("Dismiss", key="btn_dismiss"):
-            result = api_post("/api/demo/respond", {
-                "segment_name": seg,
-                "decision": "try_later",
-                "ab_group": ab_group,
-                "user_id": user_id or "",
-                "test_id": test_id or "",
-            })
-            st.rerun()
+        if is_running:
+            # Show both variants side by side
+            ctrl_col, treat_col = st.columns(2)
+            with ctrl_col:
+                st.markdown('<p style="color:grey;font-size:0.8rem;">Control — generic message</p>',
+                            unsafe_allow_html=True)
+                st.info(control_body)
+                if st.button("Accept Upgrade", key="btn_accept_ctrl", use_container_width=True):
+                    api_post("/api/demo/respond", {
+                        "segment_name": seg, "decision": "upgraded",
+                        "ab_group": "control", "user_id": user_id, "test_id": test_id,
+                    })
+                    st.rerun()
+                if st.button("Dismiss", key="btn_dismiss_ctrl", use_container_width=True):
+                    api_post("/api/demo/respond", {
+                        "segment_name": seg, "decision": "try_later",
+                        "ab_group": "control", "user_id": user_id, "test_id": test_id,
+                    })
+                    st.rerun()
+            with treat_col:
+                st.markdown('<p style="color:grey;font-size:0.8rem;">Treatment — campaign message</p>',
+                            unsafe_allow_html=True)
+                st.info(treatment_body)
+                if st.button("Accept Upgrade", key="btn_accept_treat", type="primary", use_container_width=True):
+                    api_post("/api/demo/respond", {
+                        "segment_name": seg, "decision": "upgraded",
+                        "ab_group": "treatment", "user_id": user_id, "test_id": test_id,
+                    })
+                    st.rerun()
+                if st.button("Dismiss", key="btn_dismiss_treat", use_container_width=True):
+                    api_post("/api/demo/respond", {
+                        "segment_name": seg, "decision": "try_later",
+                        "ab_group": "treatment", "user_id": user_id, "test_id": test_id,
+                    })
+                    st.rerun()
+        else:
+            # Campaign not launched — only show control baseline
+            st.markdown('<p style="color:grey;font-size:0.8rem;">Control — generic message (campaign not running)</p>',
+                        unsafe_allow_html=True)
+            st.info(control_body)
 
     with stats_col:
         # Response stats  (live from /api/demo/stats)
