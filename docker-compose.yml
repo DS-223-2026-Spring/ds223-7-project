@@ -87,6 +87,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      etl:
+        condition: service_completed_successfully
+    command: >
+      bash -c "python segment_kmeans.py &&
+               jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''"
 
   etl:
     build:
