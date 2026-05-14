@@ -72,23 +72,30 @@ def get_demo_message(segment_name: str, db: Session = Depends(get_db)):
 @router.post("/respond", response_model=DemoRespondResult,
              responses={200: {"description": "Confirmation that the decision was recorded"}})
 def record_demo_response(payload: DemoResponse, db: Session = Depends(get_db)):
-    """Record a user's upgrade / try-later decision from the Demo screen."""
-    user = db.execute(
+    """Record a user's upgrade / try-later decision from the Demo screen.
+
+    Picks a random assigned user from the segment's A/B test so that
+    test_id and group_type are populated in conversion_outcomes — this
+    lets POST /api/ab-tests/run-analysis count demo responses correctly.
+    """
+    # Pick a random ab-assigned user from this segment (gives us test_id + group_type)
+    assignment = db.execute(
         text("""
-            SELECT u.user_id
-            FROM users u
-            JOIN user_segments us ON us.user_id = u.user_id AND us.expires_at IS NULL
-            JOIN segments s      ON s.segment_id = us.segment_id
+            SELECT aa.user_id, aa.test_id, aa.group_type
+            FROM ab_assignments aa
+            JOIN ab_tests t  ON t.test_id    = aa.test_id
+            JOIN segments s  ON s.segment_id = t.segment_id
             WHERE s.name = :seg
+            ORDER BY random()
             LIMIT 1
         """),
         {"seg": payload.segment_name},
     ).mappings().first()
 
-    if not user:
+    if not assignment:
         raise HTTPException(
             status_code=404,
-            detail=f"No users found in segment '{payload.segment_name}'",
+            detail=f"No A/B assignments found for segment '{payload.segment_name}'",
         )
 
     campaign = db.execute(
@@ -101,20 +108,24 @@ def record_demo_response(payload: DemoResponse, db: Session = Depends(get_db)):
         {"seg": payload.segment_name},
     ).mappings().first()
 
+    actual_group = assignment["group_type"]
+
     db.execute(
         text("""
             INSERT INTO conversion_outcomes
-                (user_id, campaign_id, message_id, group_type, decision,
+                (user_id, test_id, campaign_id, message_id, group_type, decision,
                  revenue_amd)
             VALUES
-                (:uid, :cid, :mid, :grp, :dec,
+                (:uid, :tid, :cid, :mid, CAST(:grp AS ab_group),
+                 CAST(:dec AS upgrade_decision),
                  CASE WHEN :dec = 'upgraded' THEN 2900 ELSE NULL END)
         """),
         {
-            "uid": user["user_id"],
+            "uid": assignment["user_id"],
+            "tid": assignment["test_id"],
             "cid": campaign["campaign_id"] if campaign else None,
             "mid": campaign["active_message_id"] if campaign else None,
-            "grp": payload.ab_group,
+            "grp": actual_group,
             "dec": payload.decision,
         },
     )
@@ -123,6 +134,6 @@ def record_demo_response(payload: DemoResponse, db: Session = Depends(get_db)):
     return {
         "status": "recorded",
         "decision": payload.decision,
-        "ab_group": payload.ab_group,
+        "ab_group": actual_group,
         "segment": payload.segment_name,
     }
