@@ -660,13 +660,13 @@ elif page == "User Demo":
 
         is_running = campaign_status == "running"
 
-        if is_running:
-            # Show both variants side by side
-            ctrl_col, treat_col = st.columns(2)
-            with ctrl_col:
-                st.markdown('<p style="color:grey;font-size:0.8rem;">Control — generic message</p>',
-                            unsafe_allow_html=True)
-                st.info(control_body)
+        # Always show both columns — disable treatment buttons if not running
+        ctrl_col, treat_col = st.columns(2)
+        with ctrl_col:
+            st.markdown('<p style="color:grey;font-size:0.8rem;">Control — generic message</p>',
+                        unsafe_allow_html=True)
+            st.info(control_body)
+            if is_running:
                 if st.button("Accept Upgrade", key="btn_accept_ctrl", use_container_width=True):
                     api_post("/api/demo/respond", {
                         "segment_name": seg, "decision": "upgraded",
@@ -679,10 +679,14 @@ elif page == "User Demo":
                         "ab_group": "control", "user_id": control_user_id, "test_id": test_id,
                     })
                     st.rerun()
-            with treat_col:
-                st.markdown('<p style="color:grey;font-size:0.8rem;">Treatment — campaign message</p>',
-                            unsafe_allow_html=True)
-                st.info(treatment_body)
+            else:
+                st.button("Accept Upgrade", key="btn_accept_ctrl", use_container_width=True, disabled=True)
+                st.button("Dismiss", key="btn_dismiss_ctrl", use_container_width=True, disabled=True)
+        with treat_col:
+            st.markdown('<p style="color:grey;font-size:0.8rem;">Treatment — campaign message</p>',
+                        unsafe_allow_html=True)
+            st.info(treatment_body)
+            if is_running:
                 if st.button("Accept Upgrade", key="btn_accept_treat", type="primary", use_container_width=True):
                     api_post("/api/demo/respond", {
                         "segment_name": seg, "decision": "upgraded",
@@ -695,11 +699,10 @@ elif page == "User Demo":
                         "ab_group": "treatment", "user_id": treatment_user_id, "test_id": test_id,
                     })
                     st.rerun()
-        else:
-            # Campaign not launched — only show control baseline
-            st.markdown('<p style="color:grey;font-size:0.8rem;">Control — generic message (campaign not running)</p>',
-                        unsafe_allow_html=True)
-            st.info(control_body)
+            else:
+                st.button("Accept Upgrade", key="btn_accept_treat", type="primary", use_container_width=True, disabled=True)
+                st.button("Dismiss", key="btn_dismiss_treat", use_container_width=True, disabled=True)
+                st.caption("Launch campaign in Campaign Editor to enable")
 
     with stats_col:
         # Response stats  (live from /api/demo/stats)

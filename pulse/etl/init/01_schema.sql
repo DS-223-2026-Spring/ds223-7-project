@@ -602,7 +602,7 @@ SELECT
         WHEN 'casual'  THEN 'after_3rd_export'::message_trigger
         WHEN 'dormant' THEN 'on_app_open'::message_trigger
     END,
-    'draft'
+    CASE name WHEN 'power' THEN 'running'::campaign_status ELSE 'draft'::campaign_status END
 FROM seg
 ON CONFLICT (segment_id) DO NOTHING;
 

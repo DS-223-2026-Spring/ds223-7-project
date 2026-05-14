@@ -92,6 +92,7 @@ services:
     command: >
       bash -c "python seed_events.py &&
                python segment_kmeans.py &&
+               python run_ab_analysis.py &&
                jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''"
 
   etl:
