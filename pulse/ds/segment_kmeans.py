@@ -220,7 +220,7 @@ def write_segments_to_db(df: pd.DataFrame, segment_col: str = "segment_name") ->
         seg_rows = conn.execute(text("SELECT segment_id, name FROM segments")).mappings().all()
         seg_map  = {r["name"]: r["segment_id"] for r in seg_rows}
 
-        # Step 3 — insert new assignments
+        # Step 3 — insert new assignments with feature values
         inserted = 0
         for _, row in df.iterrows():
             seg_name = row[segment_col]
@@ -229,9 +229,24 @@ def write_segments_to_db(df: pd.DataFrame, segment_col: str = "segment_name") ->
                 print(f"  Warning: unknown segment '{seg_name}' for user {row['user_id']} — skipped")
                 continue
             conn.execute(text("""
-                INSERT INTO user_segments (user_id, segment_id)
-                VALUES (:uid, :sid)
-            """), {"uid": str(row["user_id"]), "sid": str(seg_id)})
+                INSERT INTO user_segments (
+                    user_id, segment_id,
+                    feature_session_frequency,
+                    feature_export_count,
+                    feature_paywall_hits_per_week,
+                    feature_thesaurus_depth
+                )
+                VALUES (
+                    :uid, :sid, :sessions, :exports, :paywall, :thesaurus
+                )
+            """), {
+                "uid":       str(row["user_id"]),
+                "sid":       str(seg_id),
+                "sessions":  float(row["sessions_per_week"])       if pd.notna(row.get("sessions_per_week"))      else None,
+                "exports":   float(row["total_exports"])           if pd.notna(row.get("total_exports"))          else None,
+                "paywall":   float(row["paywall_hits_last_7d"])    if pd.notna(row.get("paywall_hits_last_7d"))   else None,
+                "thesaurus": float(row["total_thesaurus_uses"])    if pd.notna(row.get("total_thesaurus_uses"))   else None,
+            })
             inserted += 1
 
         print(f"  Inserted {inserted:,} new user_segment rows")
