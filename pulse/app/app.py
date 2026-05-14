@@ -298,7 +298,7 @@ elif page == "A/B Tests":
     # ── Recalculate button ────────────────────────────────────────────
     col_title, col_btn = st.columns([4, 1])
     with col_btn:
-        if st.button("🔄 Recalculate", type="primary", use_container_width=True,
+        if st.button("Recalculate", type="primary", use_container_width=True,
                      help="Re-run Thompson Sampling on the latest conversion data"):
             with st.spinner("Running Thompson Sampling…"):
                 result = api_post("/api/ab-tests/run-analysis", {})
@@ -497,10 +497,10 @@ elif page == "Campaign Editor":
         global_params = GLOBAL_PARAMS
 
     # ── helpers — enum values match DB message_channel / message_trigger types ─
-    CHANNEL_ICONS   = {"in_app_popup": "💬", "email": "📧", "push_notification": "🔔"}
-    CHANNEL_LABELS  = {"in_app_popup": "💬 In-App", "email": "📧 Email", "push_notification": "🔔 Push"}
-    STATUS_BADGES   = {"running": "🟢 Running", "draft": "⚪ Draft", "paused": "⏸️ Paused",
-                       "pending": "🕐 Pending", "completed": "✅ Completed"}
+    CHANNEL_ICONS   = {"in_app_popup": "", "email": "", "push_notification": ""}
+    CHANNEL_LABELS  = {"in_app_popup": "In-App", "email": "Email", "push_notification": "Push"}
+    STATUS_BADGES   = {"running": "Running", "draft": "Draft", "paused": "Paused",
+                       "pending": "Pending", "completed": "Completed", "cancelled": "Cancelled"}
     TRIGGER_LABELS  = {
         "on_paywall_hit":   "Paywall Hit",
         "on_app_open":      "App Open",
@@ -585,9 +585,9 @@ elif page == "Campaign Editor":
             api_put(f"/api/campaigns/{campaign_id}/message", {"body": new_msg})
             result = api_post(f"/api/campaigns/{campaign_id}/launch", {})
             if result:
-                st.success(f"✅ Campaign for **{seg_label}** launched!")
+                st.success(f"Campaign for **{seg_label}** launched!")
             else:
-                st.success(f"✅ Campaign for **{seg_label}** launched!")
+                st.success(f"Campaign for **{seg_label}** launched!")
 
         if b2.button("Save", key="btn_save", use_container_width=True):
             result = api_put(
